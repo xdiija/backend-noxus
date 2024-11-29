@@ -1,0 +1,33 @@
+<?php
+
+namespace App\Http\Resources;
+
+use App\Helpers\DatetHelper;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\JsonResource;
+
+class UserResource extends JsonResource
+{
+    /**
+     * Transform the resource into an array.
+     */
+    public function toArray(Request $request): array
+    {
+        return [
+            'id' => $this->id,
+            'name' => $this->name,
+            'email' => $this->email,
+            'status' => $this->status,
+            'roles' => $this->roles->map(function ($role) {
+                return [
+                    'id' => $role->id,
+                    'name' => $role->name,
+                ];
+            }),
+            'last_login' => DatetHelper::toBR($this->last_login),
+            'updated_at' => DatetHelper::toBR($this->updated_at),
+            'created_at' => DatetHelper::toBR($this->created_at)
+        ];
+    }
+}
