@@ -6,22 +6,19 @@ use App\Helpers\DatetHelper;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class UserResource extends JsonResource
+class MenuResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
         return [
             'id' => $this->id,
             'name' => $this->name,
-            'email' => $this->email,
+            'route' => $this->route,
+            'icon' => $this->icon,
+            'parent_id' => $this->parent_id,
+            'order' => $this->order,
             'status' => $this->status,
-            'roles' => $this->roles->map(function ($role) {
-                return [
-                    'id' => $role->id,
-                    'name' => $role->name,
-                ];
-            }),
-            'last_login' => DatetHelper::toBR($this->last_login),
+            'children' => MenuResource::collection($this->whenLoaded('children')),
             'updated_at' => DatetHelper::toBR($this->updated_at),
             'created_at' => DatetHelper::toBR($this->created_at)
         ];

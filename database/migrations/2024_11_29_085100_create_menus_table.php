@@ -18,6 +18,7 @@ return new class extends Migration
             $table->string('icon')->nullable();
             $table->unsignedBigInteger('parent_id')->nullable();
             $table->integer('order')->default(0);
+            $table->boolean('status')->default(1);
             $table->timestamps();
 
             $table->foreign('parent_id')->references('id')->on('menus')->onDelete('cascade');
