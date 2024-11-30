@@ -11,17 +11,11 @@ class Menu extends Model
 
     protected $fillable = ['name', 'route', 'parent_id', 'icon', 'order'];
 
-    /**
-     * Define the relationship between Menu and Role, a menu can be accessed by many roles.
-     */
     public function roles()
     {
-        return $this->belongsToMany(Role::class, 'role_menu');
+        return $this->belongsToMany(Role::class, 'role_menu')->withTimestamps();
     }
 
-    /**
-     * Define a self-referential relationship for parent and child menus.
-     */
     public function children()
     {
         return $this->hasMany(Menu::class, 'parent_id');

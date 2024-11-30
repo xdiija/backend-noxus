@@ -12,9 +12,9 @@ return new class extends Migration
             $table->id();
             $table->foreignId('role_id')->constrained()->onDelete('cascade');
             $table->foreignId('menu_id')->constrained()->onDelete('cascade');
-            $table->boolean('view');
-            $table->boolean('create');
-            $table->boolean('update');
+            $table->boolean('can_view');
+            $table->boolean('can_create');
+            $table->boolean('can_update');
             $table->timestamps();
         });
     }
