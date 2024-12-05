@@ -17,7 +17,7 @@ class MenuController extends Controller
         protected PermissionService $permissionService){}
 
     // Precisa definir a forma que a role será carregada ao efetuar login
-    public function getByRoles(int $roleId = 2)
+    public function getByRoles(int $roleId = 1)
     {
         $menus = $this->menuModel->whereHas('roles', function ($query) use ($roleId) {
             $query->where('role_id', $roleId)

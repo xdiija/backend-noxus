@@ -9,22 +9,34 @@ use App\Http\Controllers\{
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
-
-Route::middleware('auth')->get('/user', function (Request $request) {
-    return $request->user();
+Route::prefix('auth')->controller(AuthController::class)->group(function () {
+    Route::post('login', 'login')->name('login');
+    Route::post('logout', 'logout');
+    Route::post('refresh', 'refresh');
+    Route::post('me', 'me')->name('me');
 });
 
-Route::apiResource('users', UserController::class);
-Route::get('menus/getbyroles', [MenuController::class, 'getByRoles']);
-Route::apiResource('menus', MenuController::class);
-Route::apiResource('roles', RoleController::class);
+Route::prefix('users')->middleware('auth')->controller(UserController::class)->group(function () {
+    Route::get('/user', function (Request $request) {
+        return $request->user();
+    });
+    Route::get('/', 'index')->middleware('check.permissions:Usuários,view');
+    Route::get('/{user}', 'show')->middleware('check.permissions:Usuários,view');
+    Route::put('/{user}', 'update')->middleware('check.permissions:Usuários,update');
+    Route::post('/', 'store')->middleware('check.permissions:Usuários,create');
+});
 
-Route::group([
-    'middleware' => 'api',
-    'prefix' => 'auth'
-], function ($router) {
-    Route::post('login', [AuthController::class, 'login'])->name('login');
-    Route::post('logout', [AuthController::class, 'logout']);
-    Route::post('refresh', [AuthController::class, 'refresh']);
-    Route::post('me', [AuthController::class, 'me']);
+Route::prefix('roles')->middleware('auth')->controller(RoleController::class)->group(function () {
+    Route::get('/', 'index')->middleware('check.permissions:Perfis,view');
+    Route::get('/{role}', 'show')->middleware('check.permissions:Perfis,view');
+    Route::put('/{role}', 'update')->middleware('check.permissions:Perfis,update');
+    Route::post('/', 'store')->middleware('check.permissions:Perfis,create');
+});
+
+Route::prefix('menus')->middleware('auth')->controller(MenuController::class)->group(function () {
+    Route::get('/getbyroles', 'getByRoles')->middleware('check.permissions:Menus,view');
+    Route::get('/', 'index')->middleware('check.permissions:Menus,view');
+    Route::get('/{menu}', 'show')->middleware('check.permissions:Menus,view');
+    Route::put('/{menu}', 'update')->middleware('check.permissions:Menus,update');
+    Route::post('/', 'store')->middleware('check.permissions:Menus,create');
 });

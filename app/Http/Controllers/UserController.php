@@ -28,7 +28,7 @@ class UserController extends Controller
     }
 
     public function show(string $id)
-    {
+    {   
         return new UserResource(
             $this->model->with('roles')->findOrFail($id)
         );
