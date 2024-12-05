@@ -6,13 +6,15 @@ use App\Http\Requests\MenuStoreUpdateRequest;
 use App\Http\Resources\MenuResource;
 use App\Models\Menu;
 use App\Models\Role;
+use App\Services\PermissionService;
 use Illuminate\Http\Request;
 
 class MenuController extends Controller
 {   
     public function __construct(
         protected Menu $menuModel,
-        protected Role $roleModel){}
+        protected Role $roleModel,
+        protected PermissionService $permissionService){}
 
     // Precisa definir a forma que a role será carregada ao efetuar login
     public function getByRoles(int $roleId = 2)
@@ -44,34 +46,10 @@ class MenuController extends Controller
             'status' => $data['status'] ?? 0
         ]);
 
-        $permissions = $this->preparePermissions($data['permissions']);
+        $permissions = $this->permissionService
+            ->preparePermissions( $data['permissions'], $this->roleModel, 'role_id' );
         $menu->roles()->sync($permissions);
         return $menu;
-    }
-
-    protected function preparePermissions(array $permissions)
-    {
-        $permissions = collect($permissions)->mapWithKeys(function ($permission) {
-            return [
-                $permission['role_id'] => [
-                    'can_view' => $permission['can_view'],
-                    'can_create' => $permission['can_create'],
-                    'can_update' => $permission['can_update'],
-                ],
-            ];
-        })->toArray();
-
-        foreach ($this->roleModel->all() as $role) {
-            if (!isset($permissions[$role->id])) {
-                $permissions[$role->id] = [
-                    'can_view' => 0,
-                    'can_create' => 0,
-                    'can_update' => 0,
-                ];
-            }
-        }
-
-        return $permissions;
     }
 
     public function show(string $id)
@@ -89,10 +67,11 @@ class MenuController extends Controller
             'icon' => $data['icon'] ?? null,
             'parent_id' => $data['parent_id'] ?? null,
             'order' => $data['order'] ?? 0,
-            'status' => $data['status'] ?? 0,
+            'status' => $data['status'],
         ]);
 
-        $permissions = $this->preparePermissions($data['permissions']);
+        $permissions = $this->permissionService
+            ->preparePermissions( $data['permissions'], $this->roleModel, 'role_id' );
         $menu->roles()->sync($permissions);
 
         return new MenuResource($menu);

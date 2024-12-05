@@ -3,6 +3,7 @@
 use App\Http\Controllers\{
     AuthController,
     MenuController,
+    RoleController,
     UserController
 };
 use Illuminate\Http\Request;
@@ -16,6 +17,7 @@ Route::middleware('auth')->get('/user', function (Request $request) {
 Route::apiResource('users', UserController::class);
 Route::get('menus/getbyroles', [MenuController::class, 'getByRoles']);
 Route::apiResource('menus', MenuController::class);
+Route::apiResource('roles', RoleController::class);
 
 Route::group([
     'middleware' => 'api',
