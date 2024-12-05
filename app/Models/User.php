@@ -71,4 +71,20 @@ class User extends Authenticatable implements JWTSubject
     {
         return $this->belongsToMany(Role::class, 'user_role');
     }
+    /**
+     * Summary of hasPermission
+     * @param mixed $menuName
+     * @param mixed $permission view - create - update
+     * @return bool
+     */
+    public function hasPermission($menuName, $permission)
+    {
+        return $this->roles()
+            ->where('roles.status', 1)
+            ->join('role_menu', 'roles.id', '=', 'role_menu.role_id')
+            ->join('menus', 'menus.id', '=', 'role_menu.menu_id')
+            ->where('menus.name', $menuName)
+            ->where("role_menu.can_{$permission}", 1)
+            ->exists();
+    }
 }
