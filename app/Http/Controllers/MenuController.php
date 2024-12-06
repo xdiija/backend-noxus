@@ -7,7 +7,6 @@ use App\Http\Resources\MenuResource;
 use App\Models\Menu;
 use App\Models\Role;
 use App\Services\PermissionService;
-use Illuminate\Http\Request;
 
 class MenuController extends Controller
 {   
@@ -16,15 +15,26 @@ class MenuController extends Controller
         protected Role $roleModel,
         protected PermissionService $permissionService){}
 
-    // Precisa definir a forma que a role será carregada ao efetuar login
-    public function getByRoles(int $roleId = 1)
-    {
-        $menus = $this->menuModel->whereHas('roles', function ($query) use ($roleId) {
-            $query->where('role_id', $roleId)
-                  ->where('can_view', true)
-                  ->where('status', true)
-                  ->where('parent_id', null);
-        })->with('children')->orderBy('order')->get();
+    public function getByRoles()
+    {   
+        $userRoles = auth()->user()->roles->pluck('id');
+
+        $menus = $this->menuModel->whereHas('roles', function ($query) use ($userRoles) {
+            $query
+                ->whereIn('role_id', $userRoles)
+                ->where('can_view', true)
+                ->where('status', true);
+        })
+        ->where('parent_id', null)
+        ->with(['children' => function ($query) use ($userRoles) {
+            $query->whereHas('roles', function ($query) use ($userRoles) {
+                $query->whereIn('role_id', $userRoles)
+                    ->where('can_view', true)
+                    ->where('status', true);
+            });
+        }])
+        ->orderBy('order')
+        ->get();
 
         return MenuResource::collection($menus);
     }
