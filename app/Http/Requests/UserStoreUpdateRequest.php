@@ -24,7 +24,7 @@ class UserStoreUpdateRequest extends FormRequest
                 'required',
                 'email',
                 'max:255',
-                'unique:users'
+                Rule::unique('users')->ignore($this->user)
             ],
             'password' => [
                 'required',
@@ -46,13 +46,7 @@ class UserStoreUpdateRequest extends FormRequest
             ]
         ];
 
-        if($this->method() == 'PATCH'){
-            $rules['email'] = [
-                'required',
-                'email',
-                'max:255',
-                Rule::unique('users')->ignore($this->user)
-            ];
+        if($this->method() == 'PATCH' || $this->method() == 'PUT'){
             $rules['password'] = [
                 'nullable',
                 'min:6',
