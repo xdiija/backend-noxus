@@ -7,14 +7,16 @@ use App\Http\Controllers\Controller;
 
 class AuthController extends Controller
 {
+    protected MenuController $menuController;
     /**
      * Create a new AuthController instance.
      *
      * @return void
      */
-    public function __construct()
+    public function __construct(MenuController $menuController)
     {
         $this->middleware('auth:api', ['except' => ['login']]);
+        $this->menuController = $menuController;
     }
 
     /**
@@ -29,7 +31,9 @@ class AuthController extends Controller
         if (! $token = auth()->attempt($credentials)) {
             return response()->json(['error' => 'Unauthorized'], 401);
         }
-        return $this->respondWithToken($token);
+        $user = ['name' => auth()->user()->name];
+        $menus = $this->menuController->getByRoles()->resolve();
+        return $this->respondWithToken($token, $user, $menus);
     }
 
     /**
@@ -77,10 +81,12 @@ class AuthController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    protected function respondWithToken($token)
+    protected function respondWithToken($token, $user = [], $menus = [])
     {
         return response()->json([
             'access_token' => $token,
+            'user' => $user,
+            'menus' => $menus,
             'token_type' => 'bearer',
             'expires_in' => auth()->factory()->getTTL() * 60
         ]);
