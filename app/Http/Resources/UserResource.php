@@ -3,6 +3,7 @@
 namespace App\Http\Resources;
 
 use App\Helpers\DatetHelper;
+use App\Helpers\StatusHelper;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -14,7 +15,10 @@ class UserResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'email' => $this->email,
-            'status' => $this->status,
+            'status' => [
+                'id' => $this->status,
+                'name' => StatusHelper::getStatusName($this->status),
+            ],
             'roles' => $this->roles->map(function ($role) {
                 return [
                     'id' => $role->id,
