@@ -24,6 +24,7 @@ Route::prefix('users')->middleware('auth')->controller(UserController::class)->g
     Route::get('/{user}', 'show')->middleware('check.permissions:Usuários,view');
     Route::put('/{user}', 'update')->middleware('check.permissions:Usuários,update');
     Route::post('/', 'store')->middleware('check.permissions:Usuários,create');
+    Route::put('/{user}/status', 'changeStatus')->middleware('check.permissions:Usuários,update');
 });
 
 Route::prefix('roles')->middleware('auth')->controller(RoleController::class)->group(function () {
