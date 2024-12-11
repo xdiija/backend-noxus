@@ -2,12 +2,15 @@
 
 namespace App\Services;
 
+use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 
 class PermissionService
 {
     public function preparePermissions(array $permissions, Model $model, string $relationId): array
     {
+        User::forgetUserPermissionsCache();
+        
         $preparedPermissions = collect($permissions)->mapWithKeys(function ($permission) use ($relationId) {
             return [
                 $permission[$relationId] => [
