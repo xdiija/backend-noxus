@@ -41,7 +41,7 @@ class UserController extends Controller
         if($request->password) $data['password'] = bcrypt($request->password);
         $user->update($data);
         $user->roles()->sync($request->roles);
-
+        User::forgetUserPermissionsCache();
         return new UserResource($user);
     }
 

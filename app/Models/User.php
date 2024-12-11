@@ -5,9 +5,11 @@ namespace App\Models;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Redis;
 use Laravel\Sanctum\HasApiTokens;
 use Tymon\JWTAuth\Contracts\JWTSubject;
 
@@ -79,12 +81,33 @@ class User extends Authenticatable implements JWTSubject
      */
     public function hasPermission($menuName, $permission)
     {
-        return $this->roles()
-            ->where('roles.status', 1)
-            ->join('role_menu', 'roles.id', '=', 'role_menu.role_id')
-            ->join('menus', 'menus.id', '=', 'role_menu.menu_id')
-            ->where('menus.name', $menuName)
-            ->where("role_menu.can_{$permission}", 1)
-            ->exists();
+        $method = "User:hasPermission";
+        $hashedSufix = md5("{$this->id}{$menuName}{$permission}");
+        $cacheKey = "{$method}:{$hashedSufix}";
+        $hasPermission = Cache::get($cacheKey);
+        
+        if ($hasPermission === null) {
+            $hasPermission = $this->roles()
+                ->where('roles.status', 1)
+                ->join('role_menu', 'roles.id', '=', 'role_menu.role_id')
+                ->join('menus', 'menus.id', '=', 'role_menu.menu_id')
+                ->where('menus.name', $menuName)
+                ->where("role_menu.can_{$permission}", 1)
+                ->exists();
+
+            Cache::put($cacheKey, $hasPermission, now()->addHour());
+        }
+        Redis::sadd('user_permissions_keys', $cacheKey);
+        return $hasPermission;
+    }
+
+
+    public static function forgetUserPermissionsCache()
+    {
+        $keys = Redis::smembers('user_permissions_keys');
+        foreach ($keys as $cacheKey) {
+            Cache::forget($cacheKey);
+        }
+        Redis::del('user_permissions_keys');
     }
 }
