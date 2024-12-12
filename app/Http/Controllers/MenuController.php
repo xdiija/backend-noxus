@@ -20,17 +20,18 @@ class MenuController extends Controller
         $userRoles = auth()->user()->roles->pluck('id');
 
         $menus = $this->menuModel->whereHas('roles', function ($query) use ($userRoles) {
-            $query
-                ->whereIn('role_id', $userRoles)
-                ->where('can_view', true)
-                ->where('status', true);
+            $query->whereIn('role_id', $userRoles)
+            ->where('can_view', true)
+            ->where('status', true);
         })
         ->where('parent_id', null)
+        ->where('status', true) 
         ->with(['children' => function ($query) use ($userRoles) {
-            $query->whereHas('roles', function ($query) use ($userRoles) {
+            $query->where('status', true)
+            ->whereHas('roles', function ($query) use ($userRoles) {
                 $query->whereIn('role_id', $userRoles)
-                    ->where('can_view', true)
-                    ->where('status', true);
+                ->where('can_view', true)
+                ->where('status', true);
             });
         }])
         ->orderBy('order')
