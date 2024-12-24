@@ -34,7 +34,7 @@ class UserStoreUpdateRequest extends FormRequest
             'status' => [
                 'required',
                 'integer',
-                'in:0,1'
+                'in:1,2'
             ],
             'roles' => [
                 'required',
@@ -77,7 +77,7 @@ class UserStoreUpdateRequest extends FormRequest
             'password.max' => 'A senha não pode ter mais de 100 caracteres.',
             'status.required' => 'O campo status é obrigatório.',
             'status.integer' => 'O campo status deve ser um número inteiro.',
-            'status.in' => 'O campo status deve ser 0 ou 1.',
+            'status.in' => 'O campo status deve ser 1 ou 2.',
         ];
     }
 }

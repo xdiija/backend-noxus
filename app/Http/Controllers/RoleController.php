@@ -26,7 +26,7 @@ class RoleController extends Controller
         $data = $request->validated();
         $role = $this->roleModel->create([
             'name' => $data["name"],
-            'status' => $data['status'] ?? 0
+            'status' => $data['status'] ?? 1
         ]);
         $permissions = $this->permissionService
             ->preparePermissions( $data['permissions'], $this->menuModel, 'menu_id' );
@@ -37,7 +37,11 @@ class RoleController extends Controller
 
     public function show(string $id)
     {
-        return new RoleResource($this->roleModel->findOrFail($id));
+        $role = Role::with(['menus' => function ($query) {
+            $query->withPivot(['can_view', 'can_create', 'can_update']);
+        }])->findOrFail($id);
+
+        return new RoleResource($role);
     }
 
     public function update(RoleStoreUpdateRequest $request, string $id)
@@ -52,6 +56,14 @@ class RoleController extends Controller
             ->preparePermissions( $data['permissions'], $this->menuModel, 'menu_id' );
         $role->menus()->sync($permissions);
 
+        return new RoleResource($role);
+    }
+
+    public function changeStatus(string $id)
+    {   
+        $role = $this->roleModel->findOrFail($id);
+        $role->status = $role->status === 1 ? 2 : 1;
+        $role->save();
         return new RoleResource($role);
     }
 }

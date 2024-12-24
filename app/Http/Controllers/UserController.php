@@ -48,7 +48,7 @@ class UserController extends Controller
     public function changeStatus(string $id)
     {   
         $user = $this->model->findOrFail($id);
-        $user->status = $user->status === 1 ? 0 : 1;
+        $user->status = $user->status === 1 ? 2 : 1;
         $user->save();
         return new UserResource($user);
     }
