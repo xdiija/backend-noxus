@@ -32,10 +32,12 @@ Route::prefix('roles')->middleware('auth')->controller(RoleController::class)->g
     Route::get('/{role}', 'show')->middleware('check.permissions:Perfis,view');
     Route::put('/{role}', 'update')->middleware('check.permissions:Perfis,update');
     Route::post('/', 'store')->middleware('check.permissions:Perfis,create');
+    Route::put('/{role}/status', 'changeStatus')->middleware('check.permissions:Perfis,update');
 });
 
 Route::prefix('menus')->middleware('auth')->controller(MenuController::class)->group(function () {
     Route::get('/getbyroles', 'getByRoles');
+    Route::get('/getactive', 'getActive');
     Route::get('/', 'index')->middleware('check.permissions:Menus,view');
     Route::get('/{menu}', 'show')->middleware('check.permissions:Menus,view');
     Route::put('/{menu}', 'update')->middleware('check.permissions:Menus,update');

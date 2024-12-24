@@ -24,10 +24,9 @@ class RoleStoreUpdateRequest extends FormRequest
             'status' => [
                 'required',
                 'integer',
-                'in:0,1'
+                'in:1,2'
             ],
             'permissions' => [
-                'required',
                 'array'
             ],
             'permissions.*.menu_id' => [
@@ -61,7 +60,7 @@ class RoleStoreUpdateRequest extends FormRequest
             'name.max' => 'O nome não pode ter mais de 255 caracteres.',
             'status.required' => 'O campo status é obrigatório.',
             'status.integer' => 'O campo status deve ser um número inteiro.',
-            'status.in' => 'O campo status deve ser 0 ou 1.',
+            'status.in' => 'O campo status deve ser 1 ou 2.',
             'permissions.required' => 'O campo permissões é obrigatório.',
             'permissions.array' => 'As permissões devem ser um array.',
             'permissions.*.menu_id.required' => 'O campo menu_id é obrigatório nas permissões.',

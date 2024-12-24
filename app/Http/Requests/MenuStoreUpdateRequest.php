@@ -44,7 +44,7 @@ class MenuStoreUpdateRequest extends FormRequest
             'status' => [
                 'required',
                 'integer',
-                'in:0,1'
+                'in:1,2'
             ],
             'permissions' => [
                 'required',
@@ -89,7 +89,7 @@ class MenuStoreUpdateRequest extends FormRequest
             'order.integer' => 'O campo ordem deve ser um número inteiro.',
             'status.required' => 'O campo status é obrigatório.',
             'status.integer' => 'O campo status deve ser um número inteiro.',
-            'status.in' => 'O campo status deve ser 0 ou 1.',
+            'status.in' => 'O campo status deve ser 1 ou 2.',
             'permissions.required' => 'O campo permissões é obrigatório.',
             'permissions.array' => 'As permissões devem ser um array.',
             'permissions.*.role_id.required' => 'O campo role_id é obrigatório nas permissões.',
