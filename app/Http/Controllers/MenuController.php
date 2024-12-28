@@ -13,54 +13,71 @@ class MenuController extends Controller
 {   
     public function __construct(
         protected Menu $menuModel,
-        protected Role $roleModel,
-        protected PermissionService $permissionService){}
+        protected Role $roleModel
+    ){}
 
     public function getByRoles()
     {   
         $userRoles = auth()->user()->roles->pluck('id');
 
-        $menus = $this->menuModel
-            ->whereHas('roles', function ($query) use ($userRoles) {
-                $query
-                    ->whereIn('role_id', $userRoles)
-                    ->where('can_view', true)
-                    ->where('status', StatusHelper::ACTIVE);
-            })
-            ->where('parent_id', null)
-            ->where('status', StatusHelper::ACTIVE) 
-            ->with(['children' => function ($query) use ($userRoles) {
-                $query
-                    ->where('status', StatusHelper::ACTIVE)
-                    ->whereHas('roles', function ($query) use ($userRoles) {
-                        $query->whereIn('role_id', $userRoles)
+        if (!$userRoles->contains(PermissionService::NOXUS_ROLE)) {
+            $menus = $this->menuModel
+                ->whereHas('roles', function ($query) use ($userRoles) {
+                    $query
+                        ->whereIn('role_id', $userRoles)
                         ->where('can_view', true)
                         ->where('status', StatusHelper::ACTIVE);
-                    });
-            }])
-            ->orderBy('order')
-            ->get();
+                })
+                ->where('parent_id', null)
+                ->where('status', StatusHelper::ACTIVE) 
+                ->with(['children' => function ($query) use ($userRoles) {
+                    $query
+                        ->where('status', StatusHelper::ACTIVE)
+                        ->whereHas('roles', function ($query) use ($userRoles) {
+                            $query->whereIn('role_id', $userRoles)
+                            ->where('can_view', true)
+                            ->where('status', StatusHelper::ACTIVE);
+                        });
+                }])
+                ->orderBy('order')->get();
+
+        } else {
+
+            $menus = $this->menuModel
+                ->where('parent_id', null)
+                ->where('status', StatusHelper::ACTIVE) 
+                ->with(['children' => function ($query) {
+                    $query->where('status', StatusHelper::ACTIVE);
+                }])
+                ->orderBy('order')->get();
+        }
+
+
 
         return MenuResource::collection($menus);
     }
 
     public function getActive()
     {   
-        $menus = $this->menuModel
+        $userRoles = auth()->user()->roles->pluck('id');
+        $menusQuery = $this->menuModel
             ->where('parent_id', null)
             ->where('status', StatusHelper::ACTIVE) 
             ->with(['children' => function ($query) {
                 $query->where('status', StatusHelper::ACTIVE);
             }])
-            ->orderBy('order')
-            ->get();
-
-        return MenuResource::collection($menus);
+            ->orderBy('order');
+        
+        if (!$userRoles->contains(PermissionService::NOXUS_ROLE)) {
+            $menusQuery->where('exclusive_noxus', false);
+        }
+    
+        return MenuResource::collection($menusQuery->get());
     }
     
     public function index()
     {   
-        return  MenuResource::collection($this->menuModel->all());;
+        return MenuResource::collection($this->menuModel->with('parent')->get());
     }
 
     public function store(MenuStoreUpdateRequest $request)
@@ -71,19 +88,23 @@ class MenuController extends Controller
             'route' => $data['route'] ?? null,
             'icon' => $data['icon'] ?? null,
             'parent_id' => $data['parent_id'] ?? null,
+            'exclusive_noxus' => $data['exclusive_noxus'],
             'order' => $data['order'] ?? 0,
             'status' => $data['status'] ?? StatusHelper::ACTIVE
         ]);
-
-        $permissions = $this->permissionService
-            ->preparePermissions( $data['permissions'], $this->roleModel, 'role_id' );
-        $menu->roles()->sync($permissions);
         return $menu;
     }
 
     public function show(string $id)
     {
-        return new MenuResource($this->menuModel->with('children')->findOrFail($id));
+        $menu = $this->menuModel->with([
+            'parent',
+            'roles' => function ($query) {
+                $query->withPivot(['can_view', 'can_create', 'can_update']);
+            }
+        ])->findOrFail($id);
+
+        return new MenuResource($menu);
     }
 
     public function update(MenuStoreUpdateRequest $request, string $id)
@@ -92,18 +113,22 @@ class MenuController extends Controller
         $menu = $this->menuModel->findOrFail($id);
         $menu->update([
             'name' => $data['name'],
-            'route' => $data['route'] ?? null,
+            'route' => $data['route'],
             'icon' => $data['icon'] ?? null,
             'parent_id' => $data['parent_id'] ?? null,
-            'order' => $data['order'] ?? 0,
-            'status' => $data[''],
+            'exclusive_noxus' => $data['exclusive_noxus'],
+            'order' => $data['order'] ?? 1,
+            'status' => $data['status']
         ]);
-
-        $permissions = $this->permissionService
-            ->preparePermissions( $data['permissions'], $this->roleModel, 'role_id' );
-        $menu->roles()->sync($permissions);
 
         return new MenuResource($menu);
     }
 
+    public function changeStatus(string $id)
+    {   
+        $menu = $this->menuModel->findOrFail($id);
+        $menu->status = $menu->status === 1 ? 2 : 1;
+        $menu->save();
+        return new MenuResource($menu);
+    }
 }

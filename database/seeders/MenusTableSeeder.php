@@ -11,39 +11,40 @@ class MenusTableSeeder extends Seeder
     {
         $menus = [
             [
-                'name' => 'Início',
-                'route' => '/',
-                'icon' => 'home',
-                'parent_id' => null,
-                'order' => 1
-            ],
-            [
-                'name' => 'Logout',
-                'route' => '/login',
-                'icon' => 'exit_to_app',
-                'parent_id' => null,
-                'order' => 9999
-            ],
-            [
                 'name' => 'Administrativo',
                 'icon' => 'admin_panel_settings',
-                'route' => '0',
+                'route' => null,
                 'parent_id' => null,
-                'order' => 2
+                'order' => 1,
+                'status' => 1,
+                'exclusive_noxus' => 0
             ],
             [
                 'name' => 'Usuários',
                 'route' => '/users',
                 'icon' => 'manage_accounts',
-                'parent_id' => 3,
-                'order' => 1
+                'parent_id' => 1,
+                'order' => 2,
+                'status' => 1,
+                'exclusive_noxus' => 0
             ],
             [
                 'name' => 'Perfis',
                 'route' => '/roles',
                 'icon' => 'groups',
-                'parent_id' => 3,
-                'order' => 2
+                'parent_id' => 1,
+                'order' => 1,
+                'status' => 1,
+                'exclusive_noxus' => 0
+            ],
+            [
+                'name' => 'Menus',
+                'route' => '/menus',
+                'icon' => 'menu',
+                'parent_id' => 1,
+                'order' => 1,
+                'status' => 1,
+                'exclusive_noxus' => 0
             ],
         ];
 

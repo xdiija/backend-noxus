@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class PermissionService
 {
+    public const NOXUS_ROLE = 1;
     public function preparePermissions(array $permissions, Model $model, string $relationId): array
     {
         User::forgetUserPermissionsCache();

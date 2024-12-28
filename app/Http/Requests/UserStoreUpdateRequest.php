@@ -24,7 +24,7 @@ class UserStoreUpdateRequest extends FormRequest
                 'required',
                 'email',
                 'max:255',
-                Rule::unique('users')->ignore($this->user)
+                Rule::unique('users')->ignore($this->id)
             ],
             'password' => [
                 'required',

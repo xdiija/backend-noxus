@@ -21,25 +21,27 @@ Route::prefix('users')->middleware('auth')->controller(UserController::class)->g
         return $request->user();
     });
     Route::get('/', 'index')->middleware('check.permissions:Usuários,view');
-    Route::get('/{user}', 'show')->middleware('check.permissions:Usuários,view');
-    Route::put('/{user}', 'update')->middleware('check.permissions:Usuários,update');
+    Route::get('/{id}', 'show')->middleware('check.permissions:Usuários,view');
+    Route::put('/{id}', 'update')->middleware('check.permissions:Usuários,update');
     Route::post('/', 'store')->middleware('check.permissions:Usuários,create');
-    Route::put('/{user}/status', 'changeStatus')->middleware('check.permissions:Usuários,update');
+    Route::put('/{id}/status', 'changeStatus')->middleware('check.permissions:Usuários,update');
 });
 
 Route::prefix('roles')->middleware('auth')->controller(RoleController::class)->group(function () {
+    Route::get('/getactive', 'getActive');
     Route::get('/', 'index')->middleware('check.permissions:Perfis,view');
-    Route::get('/{role}', 'show')->middleware('check.permissions:Perfis,view');
-    Route::put('/{role}', 'update')->middleware('check.permissions:Perfis,update');
+    Route::get('/{id}', 'show')->middleware('check.permissions:Perfis,view');
+    Route::put('/{id}', 'update')->middleware('check.permissions:Perfis,update');
     Route::post('/', 'store')->middleware('check.permissions:Perfis,create');
-    Route::put('/{role}/status', 'changeStatus')->middleware('check.permissions:Perfis,update');
+    Route::put('/{id}/status', 'changeStatus')->middleware('check.permissions:Perfis,update');
 });
 
 Route::prefix('menus')->middleware('auth')->controller(MenuController::class)->group(function () {
     Route::get('/getbyroles', 'getByRoles');
     Route::get('/getactive', 'getActive');
     Route::get('/', 'index')->middleware('check.permissions:Menus,view');
-    Route::get('/{menu}', 'show')->middleware('check.permissions:Menus,view');
-    Route::put('/{menu}', 'update')->middleware('check.permissions:Menus,update');
+    Route::get('/{id}', 'show')->middleware('check.permissions:Menus,view');
+    Route::put('/{id}', 'update')->middleware('check.permissions:Menus,update');
     Route::post('/', 'store')->middleware('check.permissions:Menus,create');
+    Route::put('/{id}/status', 'changeStatus')->middleware('check.permissions:Menus,update');
 });

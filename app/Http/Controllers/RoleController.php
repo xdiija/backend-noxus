@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\StatusHelper;
 use App\Http\Requests\RoleStoreUpdateRequest;
 use App\Http\Resources\RoleResource;
 use App\Models\Menu;
@@ -17,9 +18,16 @@ class RoleController extends Controller
         protected Role $roleModel,
         protected PermissionService $permissionService){}
 
+    public function getActive()
+    {   
+        return RoleResource::collection(
+            $this->roleModel->where('status', StatusHelper::ACTIVE)->get()
+        );
+    }
+
     public function index()
     {
-        return  RoleResource::collection($this->roleModel->all());
+        return RoleResource::collection($this->roleModel->all());
     }
     public function store(RoleStoreUpdateRequest $request)
     {
