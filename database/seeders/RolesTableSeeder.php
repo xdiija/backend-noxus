@@ -10,10 +10,10 @@ class RolesTableSeeder extends Seeder
     public function run(): void
     {
         $roles = [
-            ['name' => 'Desenvolvimento'],
-            ['name' => 'Administrador'],
-            ['name' => 'Vendedor'],
-            ['name' => 'Financeiro']
+            [
+                'name' => 'Desenvolvimento',
+                'status' => 1
+            ]
         ];
 
         foreach ($roles as $role) {

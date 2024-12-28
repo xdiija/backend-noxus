@@ -9,7 +9,7 @@ class Menu extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name', 'route', 'parent_id', 'icon', 'order'];
+    protected $fillable = ['name', 'route', 'parent_id', 'icon', 'order', 'status', 'exclusive_noxus'];
 
     public function roles()
     {

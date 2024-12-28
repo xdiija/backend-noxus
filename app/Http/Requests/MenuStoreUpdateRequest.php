@@ -19,13 +19,13 @@ class MenuStoreUpdateRequest extends FormRequest
                 'required',
                 'min:3',
                 'max:255',
-                Rule::unique('menus')->ignore($this->menu)
+                Rule::unique('menus')->ignore($this->id)
             ],
             'route' => [
                 'nullable',
                 'string',
                 'max:255',
-                Rule::unique('menus')->ignore($this->menu)
+                Rule::unique('menus')->ignore($this->id)
             ],
             'icon' => [
                 'required',
@@ -46,24 +46,7 @@ class MenuStoreUpdateRequest extends FormRequest
                 'integer',
                 'in:1,2'
             ],
-            'permissions' => [
-                'required',
-                'array'
-            ],
-            'permissions.*.role_id' => [
-                'required',
-                'integer',
-                'exists:roles,id'
-            ],
-            'permissions.*.can_view' => [
-                'required',
-                'boolean'
-            ],
-            'permissions.*.can_create' => [
-                'required',
-                'boolean'
-            ],
-            'permissions.*.can_update' => [
+            'exclusive_noxus' => [
                 'required',
                 'boolean'
             ],
@@ -90,17 +73,8 @@ class MenuStoreUpdateRequest extends FormRequest
             'status.required' => 'O campo status é obrigatório.',
             'status.integer' => 'O campo status deve ser um número inteiro.',
             'status.in' => 'O campo status deve ser 1 ou 2.',
-            'permissions.required' => 'O campo permissões é obrigatório.',
-            'permissions.array' => 'As permissões devem ser um array.',
-            'permissions.*.role_id.required' => 'O campo role_id é obrigatório nas permissões.',
-            'permissions.*.role_id.integer' => 'O campo role_id deve ser um número inteiro.',
-            'permissions.*.role_id.exists' => 'O role_id especificado não existe.',
-            'permissions.*.can_view.required' => 'O campo can_view é obrigatório nas permissões.',
-            'permissions.*.can_create.required' => 'O campo can_create é obrigatório nas permissões.',
-            'permissions.*.can_update.required' => 'O campo can_update é obrigatório nas permissões.',
-            'permissions.*.can_view.boolean' => 'O campo can_view deve ser um valor booleano.',
-            'permissions.*.can_create.boolean' => 'O campo can_create deve ser um valor booleano.',
-            'permissions.*.can_update.boolean' => 'O campo can_update deve ser um valor booleano.',
+            'exclusive_noxus.required' => 'O campo exclusive_noxus é obrigatório.',
+            'exclusive_noxus.boolean' => 'O campo exclusive_noxus deve ser um valor booleano.'
         ];
     }
 }
