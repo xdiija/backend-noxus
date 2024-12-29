@@ -34,4 +34,10 @@ class PermissionService
 
         return $preparedPermissions;
     }
+
+    public static function isNoxusUser(): bool
+    {
+        $userRoles = auth()->user()->roles->pluck('id');
+        return $userRoles->contains(self::NOXUS_ROLE);
+    }
 }

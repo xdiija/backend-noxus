@@ -36,8 +36,9 @@ class RoleController extends Controller
             'name' => $data["name"],
             'status' => $data['status'] ?? 1
         ]);
-        $permissions = $this->permissionService
-            ->preparePermissions( $data['permissions'], $this->menuModel, 'menu_id' );
+        $permissions = $this->permissionService->preparePermissions(
+            $data['permissions'], $this->menuModel, 'menu_id'
+        );
         $role->menus()->sync($permissions);
 
         return $role;
@@ -60,8 +61,9 @@ class RoleController extends Controller
             'name' => $data["name"],
             'status' => $data['status']
         ]);
-        $permissions = $this->permissionService
-            ->preparePermissions( $data['permissions'], $this->menuModel, 'menu_id' );
+        $permissions = $this->permissionService->preparePermissions(
+            $data['permissions'], $this->menuModel, 'menu_id'
+        );
         $role->menus()->sync($permissions);
 
         return new RoleResource($role);
