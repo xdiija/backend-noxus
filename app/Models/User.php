@@ -2,9 +2,7 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -79,7 +77,7 @@ class User extends Authenticatable implements JWTSubject
      * @param mixed $permission view - create - update
      * @return bool
      */
-    public function hasPermission($menuName, $permission)
+    public function hasPermission($menuName, $permission): bool
     {
         $method = "User:hasPermission";
         $hashedSufix = md5("{$this->id}{$menuName}{$permission}");
@@ -100,7 +98,6 @@ class User extends Authenticatable implements JWTSubject
         Redis::sadd('user_permissions_keys', $cacheKey);
         return $hasPermission;
     }
-
 
     public static function forgetUserPermissionsCache()
     {
