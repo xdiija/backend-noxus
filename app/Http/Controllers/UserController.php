@@ -13,8 +13,17 @@ class UserController extends Controller
     ) {}
     public function index()
     {
-        $users = $this->model->with('roles')->paginate();
-        return UserResource::collection($users);
+        $perPage = request()->get('per_page', 10); 
+        $filter = request()->get('filter', ''); 
+        $query = $this->model->with('roles');
+        
+        if (!empty($filter)) {
+            $query->where('name', 'like', "%{$filter}%");
+        }
+
+        return UserResource::collection(
+            $query->paginate($perPage)
+        );
     }
 
     public function store(UserStoreUpdateRequest $request)
