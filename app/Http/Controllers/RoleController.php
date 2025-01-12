@@ -76,4 +76,13 @@ class RoleController extends Controller
         $role->save();
         return new RoleResource($role);
     }
+
+    public function destroy(string $id)
+    {
+        $role = $this->roleModel->findOrFail($id);
+        $role->users()->detach();
+        $role->menus()->detach();
+        $role->delete();
+        return response()->noContent();
+    }
 }

@@ -21,6 +21,7 @@ return new class extends Migration
             $table->tinyInteger('status')->default(1);
             $table->boolean('exclusive_noxus')->default(false);
             $table->timestamps();
+            $table->softDeletes();
             $table->foreign('parent_id')->references('id')->on('menus')->onDelete('cascade');
         });
     }

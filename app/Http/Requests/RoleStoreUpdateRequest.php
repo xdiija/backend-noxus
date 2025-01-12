@@ -19,7 +19,7 @@ class RoleStoreUpdateRequest extends FormRequest
                 'required',
                 'min:3',
                 'max:255',
-                Rule::unique('roles')->ignore($this->id)
+                Rule::unique('roles')->whereNull('deleted_at')->ignore($this->id)
             ],
             'status' => [
                 'required',

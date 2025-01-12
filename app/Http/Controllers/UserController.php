@@ -61,4 +61,12 @@ class UserController extends Controller
         $user->save();
         return new UserResource($user);
     }
+
+    public function destroy(string $id)
+    {
+        $user = $this->model->findOrFail($id);
+        $user->roles()->detach();
+        $user->delete();
+        return response()->noContent();
+    }
 }
