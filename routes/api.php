@@ -25,6 +25,7 @@ Route::prefix('users')->middleware('auth')->controller(UserController::class)->g
     Route::put('/{id}', 'update')->middleware('check.permissions:Usuários,update');
     Route::post('/', 'store')->middleware('check.permissions:Usuários,create');
     Route::put('/{id}/status', 'changeStatus')->middleware('check.permissions:Usuários,update');
+    Route::delete('/{id}', 'destroy')->middleware('check.permissions:Usuários,update');
 });
 
 Route::prefix('roles')->middleware('auth')->controller(RoleController::class)->group(function () {
@@ -34,6 +35,7 @@ Route::prefix('roles')->middleware('auth')->controller(RoleController::class)->g
     Route::put('/{id}', 'update')->middleware('check.permissions:Perfis,update');
     Route::post('/', 'store')->middleware('check.permissions:Perfis,create');
     Route::put('/{id}/status', 'changeStatus')->middleware('check.permissions:Perfis,update');
+    Route::delete('/{id}', 'destroy')->middleware('check.permissions:Perfis,update');
 });
 
 Route::prefix('menus')->middleware('auth')->controller(MenuController::class)->group(function () {
@@ -44,4 +46,5 @@ Route::prefix('menus')->middleware('auth')->controller(MenuController::class)->g
     Route::put('/{id}', 'update')->middleware('check.permissions:Menus,update');
     Route::post('/', 'store')->middleware('check.permissions:Menus,create');
     Route::put('/{id}/status', 'changeStatus')->middleware('check.permissions:Menus,update');
+    Route::delete('/{id}', 'destroy')->middleware('check.permissions:Menus,update');    
 });

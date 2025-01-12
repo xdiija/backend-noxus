@@ -131,4 +131,12 @@ class MenuController extends Controller
         $menu->save();
         return new MenuResource($menu);
     }
+
+    public function destroy(string $id)
+    {
+        $menu = $this->menuModel->findOrFail($id);
+        $menu->roles()->detach();
+        $menu->delete();
+        return response()->noContent();
+    }
 }

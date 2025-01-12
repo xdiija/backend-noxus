@@ -19,13 +19,13 @@ class MenuStoreUpdateRequest extends FormRequest
                 'required',
                 'min:3',
                 'max:255',
-                Rule::unique('menus')->ignore($this->id)
+                Rule::unique('menus')->whereNull('deleted_at')->ignore($this->id)
             ],
             'route' => [
                 'nullable',
                 'string',
                 'max:255',
-                Rule::unique('menus')->ignore($this->id)
+                Rule::unique('menus')->whereNull('deleted_at')->ignore($this->id)
             ],
             'icon' => [
                 'required',
