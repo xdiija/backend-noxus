@@ -3,11 +3,11 @@
 namespace App\Services;
 
 use App\Models\User;
+use App\Models\Role;
 use Illuminate\Database\Eloquent\Model;
 
 class PermissionService
 {
-    public const NOXUS_ROLE = 1;
     public function preparePermissions(array $permissions, Model $model, string $relationId): array
     {
         User::forgetUserPermissionsCache();
@@ -38,6 +38,12 @@ class PermissionService
     public static function isNoxusUser(): bool
     {
         $userRoles = auth()->user()->roles->pluck('id');
-        return $userRoles->contains(self::NOXUS_ROLE);
+        return $userRoles->contains(Role::NOXUS_ROLE);
+    }
+
+    public static function isAdminUser(): bool
+    {
+        $userRoles = auth()->user()->roles->pluck('id');
+        return $userRoles->contains(Role::ADMIN_ROLE);
     }
 }

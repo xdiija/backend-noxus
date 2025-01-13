@@ -5,11 +5,14 @@ namespace App\Http\Controllers;
 use App\Http\Requests\UserStoreUpdateRequest;
 use App\Http\Resources\UserResource;
 use App\Models\User;
+use App\Services\PermissionService;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class UserController extends Controller
 {   
     public function __construct(
-        protected User $model
+        protected User $model,
+        protected PermissionService $permissionService
     ) {}
     public function index()
     {
@@ -19,6 +22,16 @@ class UserController extends Controller
         
         if (!empty($filter)) {
             $query->where('name', 'like', "%{$filter}%");
+        }
+
+        if (!PermissionService::isNoxusUser() && !PermissionService::isAdminUser()) {
+            $query->whereDoesntHave('roles', function ($roleQuery) {
+                $roleQuery->whereIn('roles.id', [1, 2]);
+            });
+        } else if (!PermissionService::isNoxusUser() && PermissionService::isAdminUser()) {
+            $query->whereDoesntHave('roles', function ($roleQuery) {
+                $roleQuery->where('roles.id', 1);
+            });
         }
 
         return UserResource::collection(
@@ -38,9 +51,24 @@ class UserController extends Controller
 
     public function show(string $id)
     {   
-        return new UserResource(
-            $this->model->with('roles')->findOrFail($id)
-        );
+        $query = $this->model->with('roles');
+
+        if (!PermissionService::isNoxusUser() && !PermissionService::isAdminUser()) {
+            $query->whereDoesntHave('roles', function ($roleQuery) {
+                $roleQuery->whereIn('roles.id', [1, 2]);
+            });
+        } elseif (!PermissionService::isNoxusUser() && PermissionService::isAdminUser()) {
+            $query->whereDoesntHave('roles', function ($roleQuery) {
+                $roleQuery->where('roles.id', 1);
+            });
+        }
+
+        try {
+            $user = $query->findOrFail($id);
+            return new UserResource($user);
+        } catch (ModelNotFoundException $e) {
+            return response()->json(['message' => 'Usuário não encontrado ou inacessível.'], 404);
+        }
     }
 
     public function update(UserStoreUpdateRequest $request, string $id)

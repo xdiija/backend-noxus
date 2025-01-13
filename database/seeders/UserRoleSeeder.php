@@ -12,10 +12,21 @@ class UserRoleSeeder extends Seeder
      */
     public function run(): void
     {
-        DB::table('user_role')->insert([
-            'user_id' => 1,
-            'role_id' => 1,
-            'created_at' => now(),
-        ]);
+        $usersRoles = [
+            [
+                'user_id' => 1,
+                'role_id' => 1,
+                'created_at' => now(),
+            ],
+            [
+                'user_id' => 2,
+                'role_id' => 2,
+                'created_at' => now(),
+            ]
+        ];
+
+        foreach ($usersRoles as $userRole) {
+            DB::table('user_role')->insert($userRole);
+        }
     }
 }
