@@ -11,6 +11,9 @@ class Role extends Model
 {
     use HasFactory, SoftDeletes;
 
+    public const NOXUS_ROLE = 1;
+    public const ADMIN_ROLE = 2;
+
     protected $fillable = ['name', 'status'];
 
     public function users(): BelongsToMany

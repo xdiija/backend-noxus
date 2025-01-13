@@ -20,7 +20,7 @@ class MenuController extends Controller
     {   
         $userRoles = auth()->user()->roles->pluck('id');
 
-        if (!$userRoles->contains(PermissionService::NOXUS_ROLE)) {
+        if (!PermissionService::isNoxusUser()) {
             $menus = $this->menuModel
                 ->whereHas('roles', function ($query) use ($userRoles) {
                     $query
@@ -68,7 +68,7 @@ class MenuController extends Controller
             }])
             ->orderBy('order');
         
-        if (!$userRoles->contains(PermissionService::NOXUS_ROLE)) {
+        if (!PermissionService::isNoxusUser()) {
             $menusQuery->where('exclusive_noxus', false);
         }
     

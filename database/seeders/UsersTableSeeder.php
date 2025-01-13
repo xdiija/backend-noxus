@@ -12,13 +12,25 @@ class UsersTableSeeder extends Seeder
      */
     public function run(): void
     {
-        User::create([
-            'name' => 'Admin User',
-            'email' => 'admin@example.com',
-            'password' => bcrypt('123456'),
-            'status' => 1,
-        ]);
+        $users = [
+            [
+                'name' => 'Noxus User',
+                'email' => 'noxus@example.com',
+                'password' => bcrypt('123456'),
+                'status' => 1,
+            ],
+            [
+                'name' => 'Admin User',
+                'email' => 'admin@example.com',
+                'password' => bcrypt('123456'),
+                'status' => 1,
+            ]
+        ];
 
-        User::factory()->count(10)->create();
+        foreach ($users as $user) {
+            User::create($user);
+        }
+
+        //User::factory()->count(10)->create();
     }
 }
