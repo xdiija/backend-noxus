@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Controller;
+use App\Helpers\StatusHelper;
 
 class AuthController extends Controller
 {
@@ -31,6 +32,11 @@ class AuthController extends Controller
         if (! $token = auth()->attempt($credentials)) {
             return response()->json(['error' => 'Unauthorized'], 401);
         }
+        
+        if(auth()->user()->status != StatusHelper::ACTIVE){
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
         $user = ['name' => auth()->user()->name];
         $menus = $this->menuController->getByRoles()->resolve();
         return $this->respondWithToken($token, $user, $menus);
