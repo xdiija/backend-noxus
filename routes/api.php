@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\{
     AuthController,
+    CustomerController,
     MenuController,
     RoleController,
     UserController
@@ -47,4 +48,13 @@ Route::prefix('menus')->middleware('auth')->controller(MenuController::class)->g
     Route::post('/', 'store')->middleware('check.permissions:Menus,create');
     Route::put('/{id}/status', 'changeStatus')->middleware('check.permissions:Menus,update');
     Route::delete('/{id}', 'destroy')->middleware('check.permissions:Menus,update');    
+});
+
+Route::prefix('customers')->middleware('auth')->controller(CustomerController::class)->group(function () {
+    Route::get('/', 'index');
+    Route::get('/{id}', 'show');
+    Route::put('/{id}', 'update');
+    Route::post('/', 'store');
+    Route::put('/{id}/status', 'changeStatus');
+    Route::delete('/{id}', 'destroy');
 });
