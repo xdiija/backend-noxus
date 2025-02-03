@@ -2,65 +2,51 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\CustomerStoreUpdateRequest;
+use App\Http\Resources\CustomerResource;
 use App\Models\Customer;
 use Illuminate\Http\Request;
 
 class CustomerController extends Controller
 {
+
+    public function __construct(
+        protected Customer $customerModel
+    ){}
+
     public function index()
     {
-        $customers = Customer::all();
-        return response()->json($customers);
+        return CustomerResource::collection(
+            $this->customerModel->get()
+        );
     }
 
-    public function store(Request $request)
+    public function store(CustomerStoreUpdateRequest $request)
     {
-        $validatedData = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'nullable|email|unique:customers,email|max:255',
-            'phone_1' => 'nullable|string|max:20',
-            'phone_2' => 'nullable|string|max:20',
-        ]);
-
-        $customer = Customer::create($validatedData);
-
-        return response()->json([
-            'message' => 'Customer created successfully.',
-            'customer' => $customer,
-        ], 201);
+        $customer = $this->customerModel->create($request->validated());
+        return new CustomerResource($customer);
     }
 
     public function show($id)
     {
-        $customer = Customer::findOrFail($id);
-        return response()->json($customer);
+        return new CustomerResource(
+            Customer::findOrFail($id)
+        );
     }
 
-    public function update(Request $request, $id)
+    public function update(CustomerStoreUpdateRequest $request, $id)
     {
-        $validatedData = $request->validate([
-            'name' => 'sometimes|required|string|max:255',
-            'email' => 'sometimes|nullable|email|unique:customers,email,' . $id . '|max:255',
-            'phone_1' => 'nullable|string|max:20',
-            'phone_2' => 'nullable|string|max:20',
-        ]);
+        $data = $request->validated();
+        $customer = $this->customerModel->findOrFail($id);
+        $customer->update($data);
 
-        $customer = Customer::findOrFail($id);
-        $customer->update($validatedData);
-
-        return response()->json([
-            'message' => 'Customer updated successfully.',
-            'customer' => $customer,
-        ]);
+        return new CustomerResource($customer);
     }
 
     public function destroy($id)
     {
-        $customer = Customer::findOrFail($id);
+        $customer = $this->customerModel->findOrFail($id);
         $customer->delete();
-
-        return response()->json([
-            'message' => 'Customer deleted successfully.',
-        ]);
+        return response()->noContent();
     }
 }
