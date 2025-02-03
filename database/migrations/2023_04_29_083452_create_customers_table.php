@@ -15,6 +15,7 @@ class CreateCustomersTable extends Migration
             $table->string('phone_1')->nullable();
             $table->string('phone_2')->nullable();
             $table->boolean('status')->default(1);
+            $table->softDeletes();
             $table->timestamps();
         });
     }

@@ -16,6 +16,7 @@ return new class extends Migration
             $table->text('description')->nullable();
             $table->unsignedBigInteger('category_id');
             $table->unsignedBigInteger('account_id');
+            $table->softDeletes();
             $table->timestamps();
 
             $table->foreign('category_id')->references('id')->on('transaction_categories')->onDelete('cascade');

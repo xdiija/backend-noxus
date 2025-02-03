@@ -19,5 +19,6 @@ class Customer extends Model
         'email',
         'phone_1',
         'phone_2',
+        'status'
     ];
 }

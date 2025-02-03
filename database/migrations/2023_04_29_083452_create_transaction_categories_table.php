@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string('name')->unique();
             $table->enum('type', ['income', 'expense']);
             $table->unsignedBigInteger('parent_id')->nullable();
+            $table->softDeletes();
             $table->timestamps();
         });
     }
