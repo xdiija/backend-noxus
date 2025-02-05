@@ -13,6 +13,7 @@ return new class extends Migration
             $table->string('name');
             $table->enum('type', ['bank', 'cash', 'credit_card']);
             $table->decimal('balance', 10, 2)->default(0);
+            $table->boolean('status')->default(1);
             $table->softDeletes();
             $table->timestamps();
         });

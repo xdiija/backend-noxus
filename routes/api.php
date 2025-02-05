@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\{
+    AccountController,
     AuthController,
     CustomerController,
     MenuController,
@@ -17,6 +18,9 @@ Route::prefix('auth')->controller(AuthController::class)->group(function () {
     Route::post('me', 'me')->name('me');
 });
 
+/**
+ * Core
+ */
 Route::prefix('users')->middleware('auth')->controller(UserController::class)->group(function () {
     Route::get('/user', function (Request $request) {
         return $request->user();
@@ -51,10 +55,22 @@ Route::prefix('menus')->middleware('auth')->controller(MenuController::class)->g
 });
 
 Route::prefix('customers')->middleware('auth')->controller(CustomerController::class)->group(function () {
-    Route::get('/', 'index');
-    Route::get('/{id}', 'show');
-    Route::put('/{id}', 'update');
-    Route::post('/', 'store');
-    Route::put('/{id}/status', 'changeStatus');
-    Route::delete('/{id}', 'destroy');
+    Route::get('/', 'index')->middleware('check.permissions:Clientes,view');
+    Route::get('/{id}', 'show')->middleware('check.permissions:Clientes,view');
+    Route::put('/{id}', 'update')->middleware('check.permissions:Clientes,update');
+    Route::post('/', 'store')->middleware('check.permissions:Clientes,create');
+    Route::put('/{id}/status', 'changeStatus')->middleware('check.permissions:Clientes,update');
+    Route::delete('/{id}', 'destroy')->middleware('check.permissions:Clientes,update');
+});
+
+/**
+ * Financeiro
+ */
+Route::prefix('accounts')->middleware('auth')->controller(AccountController::class)->group(function () {
+    Route::get('/', 'index')->middleware('check.permissions:Contas,view');
+    Route::get('/{id}', 'show')->middleware('check.permissions:Contas,view');
+    Route::put('/{id}', 'update')->middleware('check.permissions:Contas,update');
+    Route::post('/', 'store')->middleware('check.permissions:Contas,create');
+    Route::put('/{id}/status', 'changeStatus')->middleware('check.permissions:Contas,update');
+    Route::delete('/{id}', 'destroy')->middleware('check.permissions:Contas,update');
 });
