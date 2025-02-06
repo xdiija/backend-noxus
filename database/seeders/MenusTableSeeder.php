@@ -11,6 +11,7 @@ class MenusTableSeeder extends Seeder
     {
         $menus = [
             [
+                //id: 1
                 'name' => 'Administrativo',
                 'icon' => 'admin_panel_settings',
                 'route' => null,
@@ -20,6 +21,7 @@ class MenusTableSeeder extends Seeder
                 'exclusive_noxus' => 0
             ],
             [
+                //id: 2
                 'name' => 'Usuários',
                 'route' => '/users',
                 'icon' => 'manage_accounts',
@@ -29,6 +31,7 @@ class MenusTableSeeder extends Seeder
                 'exclusive_noxus' => 0
             ],
             [
+                //id: 3
                 'name' => 'Perfis',
                 'route' => '/roles',
                 'icon' => 'groups',
@@ -38,10 +41,61 @@ class MenusTableSeeder extends Seeder
                 'exclusive_noxus' => 0
             ],
             [
+                //id: 4
                 'name' => 'Menus',
                 'route' => '/menus',
                 'icon' => 'menu',
                 'parent_id' => 1,
+                'order' => 1,
+                'status' => 1,
+                'exclusive_noxus' => 0
+            ],
+            [
+                //id: 5
+                'name' => 'Comercial',
+                'icon' => 'business_center',
+                'route' => null,
+                'parent_id' => null,
+                'order' => 1,
+                'status' => 1,
+                'exclusive_noxus' => 0
+            ],
+            [
+                //id: 6
+                'name' => 'Clientes',
+                'route' => '/customers',
+                'icon' => 'person',
+                'parent_id' => 5,
+                'order' => 1,
+                'status' => 1,
+                'exclusive_noxus' => 0
+            ],
+            [
+                //id: 7
+                'name' => 'Financeiro',
+                'icon' => 'attach_money',
+                'route' => null,
+                'parent_id' => null,
+                'order' => 1,
+                'status' => 1,
+                'exclusive_noxus' => 0
+            ],
+            [
+                //id: 8
+                'name' => 'Contas',
+                'route' => '/accounts',
+                'icon' => 'account_balance_wallet',
+                'parent_id' => 7,
+                'order' => 1,
+                'status' => 1,
+                'exclusive_noxus' => 0
+            ],
+            [
+                //id: 9
+                'name' => 'Categorias de Transações',
+                'route' => '/transaction-categories',
+                'icon' => 'category',
+                'parent_id' => 7,
                 'order' => 1,
                 'status' => 1,
                 'exclusive_noxus' => 0
