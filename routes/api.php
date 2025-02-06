@@ -6,6 +6,7 @@ use App\Http\Controllers\{
     CustomerController,
     MenuController,
     RoleController,
+    TransactionCategoryController,
     UserController
 };
 use Illuminate\Http\Request;
@@ -73,4 +74,22 @@ Route::prefix('accounts')->middleware('auth')->controller(AccountController::cla
     Route::post('/', 'store')->middleware('check.permissions:Contas,create');
     Route::put('/{id}/status', 'changeStatus')->middleware('check.permissions:Contas,update');
     Route::delete('/{id}', 'destroy')->middleware('check.permissions:Contas,update');
+});
+
+Route::prefix('transaction-categories')->middleware('auth')->controller(AccountController::class)->group(function () {
+    Route::get('/', 'index')->middleware('check.permissions:Contas,view');
+    Route::get('/{id}', 'show')->middleware('check.permissions:Contas,view');
+    Route::put('/{id}', 'update')->middleware('check.permissions:Contas,update');
+    Route::post('/', 'store')->middleware('check.permissions:Contas,create');
+    Route::put('/{id}/status', 'changeStatus')->middleware('check.permissions:Contas,update');
+    Route::delete('/{id}', 'destroy')->middleware('check.permissions:Contas,update');
+});
+
+Route::prefix('transaction-categories')->middleware('auth')->controller(TransactionCategoryController::class)->group(function () {
+    Route::get('/', 'index')->middleware('check.permissions:Categorias de Transações,view');
+    Route::get('/{id}', 'show')->middleware('check.permissions:Categorias de Transações,view');
+    Route::put('/{id}', 'update')->middleware('check.permissions:Categorias de Transações,update');
+    Route::post('/', 'store')->middleware('check.permissions:Categorias de Transações,create');
+    Route::put('/{id}/status', 'changeStatus')->middleware('check.permissions:Categorias de Transações,update');
+    Route::delete('/{id}', 'destroy')->middleware('check.permissions:Categorias de Transações,update');
 });
