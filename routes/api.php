@@ -5,8 +5,10 @@ use App\Http\Controllers\{
     AuthController,
     CustomerController,
     MenuController,
+    PaymentMethodController,
     RoleController,
     TransactionCategoryController,
+    TransactionController,
     UserController
 };
 use Illuminate\Http\Request;
@@ -76,7 +78,7 @@ Route::prefix('accounts')->middleware('auth')->controller(AccountController::cla
     Route::delete('/{id}', 'destroy')->middleware('check.permissions:Contas,update');
 });
 
-Route::prefix('transaction-categories')->middleware('auth')->controller(AccountController::class)->group(function () {
+Route::prefix('transaction-categories')->middleware('auth')->controller(TransactionCategoryController::class)->group(function () {
     Route::get('/', 'index')->middleware('check.permissions:Contas,view');
     Route::get('/{id}', 'show')->middleware('check.permissions:Contas,view');
     Route::put('/{id}', 'update')->middleware('check.permissions:Contas,update');
@@ -85,11 +87,20 @@ Route::prefix('transaction-categories')->middleware('auth')->controller(AccountC
     Route::delete('/{id}', 'destroy')->middleware('check.permissions:Contas,update');
 });
 
-Route::prefix('transaction-categories')->middleware('auth')->controller(TransactionCategoryController::class)->group(function () {
-    Route::get('/', 'index')->middleware('check.permissions:Categorias de Transações,view');
-    Route::get('/{id}', 'show')->middleware('check.permissions:Categorias de Transações,view');
-    Route::put('/{id}', 'update')->middleware('check.permissions:Categorias de Transações,update');
-    Route::post('/', 'store')->middleware('check.permissions:Categorias de Transações,create');
-    Route::put('/{id}/status', 'changeStatus')->middleware('check.permissions:Categorias de Transações,update');
-    Route::delete('/{id}', 'destroy')->middleware('check.permissions:Categorias de Transações,update');
+Route::prefix('payment-methods')->middleware('auth')->controller(PaymentMethodController::class)->group(function () {
+    Route::get('/', 'index')->middleware('check.permissions:Métodos de Pagamento,view');
+    Route::get('/{id}', 'show')->middleware('check.permissions:Métodos de Pagamento,view');
+    Route::put('/{id}', 'update')->middleware('check.permissions:Métodos de Pagamento,update');
+    Route::post('/', 'store')->middleware('check.permissions:Métodos de Pagamento,create');
+    Route::put('/{id}/status', 'changeStatus')->middleware('check.permissions:Métodos de Pagamento,update');
+    Route::delete('/{id}', 'destroy')->middleware('check.permissions:Métodos de Pagamento,update');
+});
+
+Route::prefix('transactions')->middleware('auth')->controller(TransactionController::class)->group(function () {
+    Route::get('/', 'index')->middleware('check.permissions:Movimentações,view');
+    Route::get('/{id}', 'show')->middleware('check.permissions:Movimentações,view');
+    Route::put('/{id}', 'update')->middleware('check.permissions:Movimentações,update');
+    Route::post('/', 'store')->middleware('check.permissions:Movimentações,create');
+    Route::put('/{id}/status', 'changeStatus')->middleware('check.permissions:Movimentações,update');
+    Route::delete('/{id}', 'destroy')->middleware('check.permissions:Movimentações,update');
 });
