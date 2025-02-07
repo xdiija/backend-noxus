@@ -18,7 +18,6 @@ return new class extends Migration
             $table->unsignedBigInteger('account_id');
             $table->softDeletes();
             $table->timestamps();
-
             $table->foreign('category_id')->references('id')->on('transaction_categories')->onDelete('cascade');
             $table->foreign('account_id')->references('id')->on('accounts')->onDelete('cascade');
         });

@@ -2,14 +2,14 @@
 
 namespace Database\Seeders;
 
-use App\Models\Menu;
+use App\Models\TransactionCategory;
 use Illuminate\Database\Seeder;
 
 class TransactionCategoriesTableSeeder extends Seeder
 {
     public function run(): void
     {
-        $menus = [
+        $transactionCategories = [
             [
                 'name' => 'Vendas de Produtos',
                 'type' => 'income',
@@ -64,10 +64,22 @@ class TransactionCategoriesTableSeeder extends Seeder
                 'parent_id' => null,
                 'status' => 1
             ],
+            [
+                'name' => 'Ajuste de Saldo Saída',
+                'type' => 'expense',
+                'parent_id' => null,
+                'status' => 1
+            ],
+            [
+                'name' => 'Ajuste de Saldo Entrada',
+                'type' => 'income',
+                'parent_id' => null,
+                'status' => 1
+            ],
         ];
 
-        foreach ($menus as $menu) {
-            Menu::create($menu);
+        foreach ($transactionCategories as $transactionCategorie) {
+            TransactionCategory::create($transactionCategorie);
         }
     }
 }
