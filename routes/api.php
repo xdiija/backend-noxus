@@ -9,7 +9,8 @@ use App\Http\Controllers\{
     RoleController,
     TransactionCategoryController,
     TransactionController,
-    UserController
+    UserController,
+    changeStatus
 };
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -54,7 +55,7 @@ Route::prefix('menus')->middleware('auth')->controller(MenuController::class)->g
     Route::put('/{id}', 'update')->middleware('check.permissions:Menus,update');
     Route::post('/', 'store')->middleware('check.permissions:Menus,create');
     Route::put('/{id}/status', 'changeStatus')->middleware('check.permissions:Menus,update');
-    Route::delete('/{id}', 'destroy')->middleware('check.permissions:Menus,update');    
+    Route::delete('/{id}', 'destroy')->middleware('check.permissions:Menus,update');
 });
 
 Route::prefix('customers')->middleware('auth')->controller(CustomerController::class)->group(function () {

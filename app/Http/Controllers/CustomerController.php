@@ -48,4 +48,15 @@ class CustomerController extends Controller
         $customer->delete();
         return response()->noContent();
     }
+
+    public function changeStatus($id)
+    {
+        $customer = Customer::findOrFail($id);
+        $customer->status = $customer->status == 1 ? 2 : 1;
+        $customer->save();
+
+        return response()->json(['message' => 'Status atualizado com sucesso']);
+    }
+
+
 }
