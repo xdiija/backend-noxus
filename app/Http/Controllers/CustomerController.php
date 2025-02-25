@@ -30,7 +30,7 @@ class CustomerController extends Controller
     }
 
     return CustomerResource::collection(
-        $query->paginate($perPage) // <-- GARANTE A PAGINAÇÃO CERTA
+        $query->paginate($perPage) // <-- GARANTE A PAGINAÇÃO
     );
 }
 
