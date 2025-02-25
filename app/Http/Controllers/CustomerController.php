@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\CustomerStoreUpdateRequest;
 use App\Http\Resources\CustomerResource;
 use App\Models\Customer;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class CustomerController extends Controller
 {
@@ -14,11 +15,25 @@ class CustomerController extends Controller
     ){}
 
     public function index()
-    {
-        return CustomerResource::collection(
-            $this->customerModel->get()
-        );
+{
+    $perPage = request()->get('per_page', 10);
+    $filter = request()->get('filter', '');
+    $query = $this->customerModel->query();
+
+    if (!empty(trim($filter))) {
+        $query->where(function ($q) use ($filter) {
+            $q->where('name', 'like', "%{$filter}%")
+              ->orWhere('email', 'like', "%{$filter}%")
+              ->orWhere('phone_1', 'like', "%{$filter}%")
+              ->orWhere('phone_2', 'like', "%{$filter}%");
+        });
     }
+
+    return CustomerResource::collection(
+        $query->paginate($perPage) // <-- GARANTE A PAGINAÇÃO CERTA
+    );
+}
+
 
     public function store(CustomerStoreUpdateRequest $request)
     {
