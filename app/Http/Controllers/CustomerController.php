@@ -20,17 +20,12 @@ class CustomerController extends Controller
     $filter = request()->get('filter', '');
     $query = $this->customerModel->query();
 
-    if (!empty(trim($filter))) {
-        $query->where(function ($q) use ($filter) {
-            $q->where('name', 'like', "%{$filter}%")
-              ->orWhere('email', 'like', "%{$filter}%")
-              ->orWhere('phone_1', 'like', "%{$filter}%")
-              ->orWhere('phone_2', 'like', "%{$filter}%");
-        });
+    if (!empty($filter)) {
+        $query->where('name', 'like', "{$filter}%");
     }
 
     return CustomerResource::collection(
-        $query->paginate($perPage) // <-- GARANTE A PAGINAÇÃO
+        $query->paginate($perPage)
     );
 }
 
