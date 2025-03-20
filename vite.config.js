@@ -8,4 +8,14 @@ export default defineConfig({
             refresh: true,
         }),
     ],
+
+    server: {
+        proxy: {
+            '/api': {
+                target: 'http://localhost:8989', // Backend Laravel
+                changeOrigin: true,
+                secure: false,
+            },
+        },
+    },
 });

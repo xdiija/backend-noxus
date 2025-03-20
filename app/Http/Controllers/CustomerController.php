@@ -22,6 +22,7 @@ class CustomerController extends Controller
 
     if (!empty($filter)) {
         $query->where('name', 'like', "{$filter}%");
+
     }
 
     return CustomerResource::collection(

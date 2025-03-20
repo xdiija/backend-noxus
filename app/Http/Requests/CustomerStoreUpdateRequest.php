@@ -52,7 +52,7 @@ class CustomerStoreUpdateRequest extends FormRequest
             'phone_1' => PhoneHelper::sanitize($this->phone_1),
             'phone_2' => PhoneHelper::sanitize($this->phone_2),
         ]);
-    }    
+    }
 
     public function messages(): array
     {
