@@ -15,8 +15,16 @@ class CustomerController extends Controller
 
     public function index()
     {
+        $perPage = request()->get('per_page', 10); 
+        $filter = request()->get('filter', ''); 
+        $query = $this->customerModel->with('roles');
+        
+        if (!empty($filter)) {
+            $query->where('name', 'like', "%{$filter}%");
+        }
+
         return CustomerResource::collection(
-            $this->customerModel->get()
+            $query->paginate($perPage)
         );
     }
 

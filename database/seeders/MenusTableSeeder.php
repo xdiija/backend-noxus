@@ -86,7 +86,7 @@ class MenusTableSeeder extends Seeder
                 'route' => '/accounts',
                 'icon' => 'account_balance_wallet',
                 'parent_id' => 7,
-                'order' => 1,
+                'order' => 2,
                 'status' => 1,
                 'exclusive_noxus' => 0
             ],
@@ -96,7 +96,27 @@ class MenusTableSeeder extends Seeder
                 'route' => '/transaction-categories',
                 'icon' => 'category',
                 'parent_id' => 7,
+                'order' => 3,
+                'status' => 1,
+                'exclusive_noxus' => 0
+            ],
+            [
+                //id: 10
+                'name' => 'Transações',
+                'route' => '/transactions',
+                'icon' => 'attach_money',
+                'parent_id' => 7,
                 'order' => 1,
+                'status' => 1,
+                'exclusive_noxus' => 0
+            ],
+            [
+                //id: 11
+                'name' => 'Métodos de Pagamento',
+                'route' => '/payment-methods',
+                'icon' => 'credit_card',
+                'parent_id' => 7,
+                'order' => 3,
                 'status' => 1,
                 'exclusive_noxus' => 0
             ],
