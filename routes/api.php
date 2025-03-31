@@ -9,8 +9,7 @@ use App\Http\Controllers\{
     RoleController,
     TransactionCategoryController,
     TransactionController,
-    UserController,
-    changeStatus
+    UserController
 };
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
