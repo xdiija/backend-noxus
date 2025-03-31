@@ -36,7 +36,8 @@ class MenuController extends Controller
                         ->whereHas('roles', function ($query) use ($userRoles) {
                             $query->whereIn('role_id', $userRoles)
                             ->where('can_view', true)
-                            ->where('status', StatusHelper::ACTIVE);
+                            ->where('status', StatusHelper::ACTIVE)
+                                ->orderBy('order');
                         });
                 }])
                 ->orderBy('order')->get();
@@ -47,7 +48,8 @@ class MenuController extends Controller
                 ->where('parent_id', null)
                 ->where('status', StatusHelper::ACTIVE) 
                 ->with(['children' => function ($query) {
-                    $query->where('status', StatusHelper::ACTIVE);
+                    $query->where('status', StatusHelper::ACTIVE)
+                        ->orderBy('order');
                 }])
                 ->orderBy('order')->get();
         }

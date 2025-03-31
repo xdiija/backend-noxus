@@ -13,7 +13,13 @@ class AccountsTableSeeder extends Seeder
             [
                 'name' => 'Caixa',
                 'type' => 'cash',
-                'balance' => 0,
+                'balance' => 50,
+                'status' => 1
+            ],
+            [
+                'name' => 'Bradesco 1',
+                'type' => 'bank',
+                'balance' => 1000,
                 'status' => 1
             ],
         ];
