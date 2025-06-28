@@ -8,12 +8,16 @@ use App\Models\User;
 use App\Services\PermissionService;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 
+/**
+ * @OA\Info(title="Documentação Noxus API", version="1.0")
+ */
 class UserController extends Controller
 {   
     public function __construct(
         protected User $model,
         protected PermissionService $permissionService
     ) {}
+
     public function index()
     {
         $perPage = request()->get('per_page', 10); 
