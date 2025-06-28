@@ -3,7 +3,9 @@
 namespace App\Http\Requests;
 
 use App\Helpers\PhoneHelper;
-use App\Rules\Phone;
+use App\Helpers\CpfHelper;
+use App\Rules\PhoneRule;
+use App\Rules\CpfRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -31,15 +33,16 @@ class CustomerStoreUpdateRequest extends FormRequest
             'cpf' => [
                 'required',
                 'max:50',
+                new CpfRule,
                 Rule::unique('customers')->ignore($this->id)
             ],
             'phone_1' => [
                 'required',
-                new Phone
+                new PhoneRule
             ],
             'phone_2' => [
                 'required',
-                new Phone
+                new PhoneRule
             ],
             'status' => [
                 'required',
@@ -56,6 +59,7 @@ class CustomerStoreUpdateRequest extends FormRequest
         $this->merge([
             'phone_1' => PhoneHelper::sanitize($this->phone_1),
             'phone_2' => PhoneHelper::sanitize($this->phone_2),
+            'cpf' => CpfHelper::sanitize($this->cpf),
         ]);
     }    
 
@@ -69,6 +73,7 @@ class CustomerStoreUpdateRequest extends FormRequest
             'email.email' => 'O email informado é inválido!',
             'email.max' => 'O email não pode ter mais de 255 caracteres.',
             'email.unique' => 'O email já está em uso.',
+            'cpf.required' => 'O campo cpf é obrigatório.',
             'phone_1.required' => 'O campo telefone 1 é obrigatório.',
             'phone_2.required' => 'O campo telefone 2 é obrigatório.',
             'status.required' => 'O campo status é obrigatório.',

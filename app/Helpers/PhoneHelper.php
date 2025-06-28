@@ -6,7 +6,6 @@ class PhoneHelper
 {
     public static function sanitize(?string $phone): string
     {
-
         return preg_replace('/\D/', '', $phone);
     }
 
