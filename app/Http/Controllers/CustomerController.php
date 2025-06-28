@@ -17,7 +17,7 @@ class CustomerController extends Controller
     {
         $perPage = request()->get('per_page', 10); 
         $filter = request()->get('filter', ''); 
-        $query = $this->customerModel->with('roles');
+        $query = $this->customerModel->query();
         
         if (!empty($filter)) {
             $query->where('name', 'like', "%{$filter}%");
