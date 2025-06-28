@@ -28,6 +28,11 @@ class CustomerStoreUpdateRequest extends FormRequest
                 'max:255',
                 Rule::unique('customers')->ignore($this->id)
             ],
+            'cpf' => [
+                'required',
+                'max:50',
+                Rule::unique('customers')->ignore($this->id)
+            ],
             'phone_1' => [
                 'required',
                 new Phone
