@@ -32,7 +32,8 @@ class TransactionCategoryStoreUpdateRequest extends FormRequest
             ],
             'status' => [
                 'required',
-                'boolean'
+                'integer',
+                'in:1,2',   
             ],
         ];
     }

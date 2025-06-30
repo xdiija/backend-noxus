@@ -23,7 +23,8 @@ class PaymentMethodStoreUpdateRequest extends FormRequest
             ],
             'status' => [
                 'required',
-                'boolean',
+                'integer',
+                'in:1,2',   
             ],
         ];
     }
