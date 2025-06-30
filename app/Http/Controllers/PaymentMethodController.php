@@ -51,4 +51,12 @@ class PaymentMethodController extends Controller
 
         return response()->noContent();
     }
+
+    public function changeStatus(string $id)
+    {   
+        $paymentMethod = $this->paymentMethodModel->findOrFail($id);
+        $paymentMethod->status = $paymentMethod->status === 1 ? 2 : 1;
+        $paymentMethod->save();
+        return new PaymentMethodResource($paymentMethod);
+    }
 }
