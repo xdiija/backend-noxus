@@ -19,6 +19,8 @@ return new class extends Migration
 
     public function down()
     {
+        Schema::disableForeignKeyConstraints();
         Schema::dropIfExists('payment_methods');
+        Schema::enableForeignKeyConstraints();
     }
 };
