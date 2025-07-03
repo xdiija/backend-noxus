@@ -12,18 +12,30 @@ class TransactionResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'amount' => $this->amount,
-            'due_date' => DatetHelper::toBR($this->due_date),
-            'payment_date' => DatetHelper::toBR($this->payment_date),
             'description' => $this->description,
             'category' => [
                 'id' => $this->category->id,
                 'name' => $this->category->name,
             ],
-            'account' => [
-                'id' => $this->account->id,
-                'name' => $this->account->name,
-            ],
+            'payments' => $this->payments->map(function ($payment) {
+                return [
+                    'id' => $payment->id,
+                    'account' => [
+                        'id' => $payment->account->id,
+                        'name' => $payment->account->name,
+                    ],
+                    'payment_method' => [
+                        'id' => $payment->paymentMethod->id,
+                        'name' => $payment->paymentMethod->name,
+                    ],
+                    'amount' => $payment->amount,
+                    'discount' => $payment->discount,
+                    'increase' => $payment->increase,
+                    'due_date' => DatetHelper::toBR($payment->due_date),
+                    'payment_date' => DatetHelper::toBR($payment->payment_date),
+                    'status' => $payment->status,
+                ];
+            }),
             'created_at' => DatetHelper::toBR($this->created_at),
             'updated_at' => DatetHelper::toBR($this->updated_at),
         ];

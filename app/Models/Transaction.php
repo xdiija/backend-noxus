@@ -13,12 +13,8 @@ class Transaction extends Model
     protected $table = 'transactions';
 
     protected $fillable = [
-        'amount',
-        'due_date',
-        'payment_date',
         'description',
         'category_id',
-        'account_id',
     ];
 
     public function category()
@@ -26,8 +22,8 @@ class Transaction extends Model
         return $this->belongsTo(TransactionCategory::class, 'category_id');
     }
 
-    public function account()
+    public function payments()
     {
-        return $this->belongsTo(Account::class, 'account_id');
+        return $this->hasMany(Payment::class, 'transaction_id');
     }
 }
