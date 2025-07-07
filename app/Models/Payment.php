@@ -4,7 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Helpers\Money;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Payment extends Model
@@ -25,20 +24,19 @@ class Payment extends Model
         'status',
     ];
 
-    public function setAmountAttribute(int $value): void
-    {
-        $this->attributes['amount'] = Money::fromIntToFloat($value);
-    }
+    public static array $statusNames = [
+        1 => 'Pendente',
+        2 => 'Pago',
+        3 => 'Recusado',
+        4 => 'Cancelado',
+        5 => 'Em análise',
+    ];
 
-    public function setDiscountAttribute(?int $value): void
-    {
-        $this->attributes['discount'] = $value ? Money::fromIntToFloat($value) : 0;
-    }
-
-    public function setIncreaseAttribute(?int $value): void
-    {
-        $this->attributes['increase'] = $value ? Money::fromIntToFloat($value) : 0;
-    }
+    public const STATUS_PENDING = 1;
+    public const STATUS_PAID = 2;
+    public const STATUS_REJECTED = 3;
+    public const STATUS_CANCELED = 4;
+    public const STATUS_UNDER_ANALYSIS = 5;
 
     public function transaction()
     {
@@ -53,5 +51,10 @@ class Payment extends Model
     public function paymentMethod()
     {
         return $this->belongsTo(PaymentMethod::class, 'payment_method_id');
+    }
+
+    public static function getStatusName(?int $status): ?string
+    {
+        return self::$statusNames[$status] ?? null;
     }
 }

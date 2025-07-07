@@ -92,7 +92,7 @@ class MenusTableSeeder extends Seeder
             ],
             [
                 //id: 9
-                'name' => 'Categorias de Transações',
+                'name' => 'Categorias de Movimentações',
                 'route' => '/transaction-categories',
                 'icon' => 'category',
                 'parent_id' => 7,
@@ -102,7 +102,7 @@ class MenusTableSeeder extends Seeder
             ],
             [
                 //id: 10
-                'name' => 'Transações',
+                'name' => 'Movimentações',
                 'route' => '/transactions',
                 'icon' => 'attach_money',
                 'parent_id' => 7,

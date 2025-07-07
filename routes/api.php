@@ -9,7 +9,8 @@ use App\Http\Controllers\{
     RoleController,
     TransactionCategoryController,
     TransactionController,
-    UserController
+    UserController,
+    PaymentController
 };
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -98,9 +99,11 @@ Route::prefix('payment-methods')->middleware('auth')->controller(PaymentMethodCo
 
 Route::prefix('transactions')->middleware('auth')->controller(TransactionController::class)->group(function () {
     Route::get('/', 'index')->middleware('check.permissions:Movimentações,view');
+    Route::get('/get-payments', 'getPayments')->middleware('check.permissions:Movimentações,view');
     Route::get('/{id}', 'show')->middleware('check.permissions:Movimentações,view');
     Route::put('/{id}', 'update')->middleware('check.permissions:Movimentações,update');
     Route::post('/', 'store')->middleware('check.permissions:Movimentações,create');
     Route::put('/{id}/status', 'changeStatus')->middleware('check.permissions:Movimentações,update');
+    Route::put('/payments/{id}/status', 'changePaymentStatus')->middleware('check.permissions:Movimentações,update');
     Route::delete('/{id}', 'destroy')->middleware('check.permissions:Movimentações,update');
 });
