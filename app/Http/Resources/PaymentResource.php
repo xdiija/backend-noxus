@@ -42,7 +42,8 @@ class PaymentResource extends JsonResource
             'payment_date' => DatetHelper::toBR($this->payment_date),
             'status' => [
                 'id' => $this->status,
-                'name' => Payment::getStatusName($this->status),
+                'name' => $this->payment_date == null && $this->due_date < now()->toDateString()
+                    ? 'Vencido' : Payment::getStatusName($this->status),
             ],
             'created_at' => DatetHelper::toBR($this->created_at),
             'updated_at' => DatetHelper::toBR($this->updated_at),
