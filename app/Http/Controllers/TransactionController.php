@@ -11,6 +11,7 @@ use App\Models\Account;
 use Illuminate\Support\Facades\DB;
 use App\Helpers\Money;
 use App\Helpers\LogHelper;
+use App\Http\Requests\PaymentsGetRequest;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Validator;
 
@@ -31,36 +32,56 @@ class TransactionController extends Controller
         );
     }
 
-    public function getPayments()
+    public function getPayments(PaymentsGetRequest $request)
     {
-        $perPage = request()->get('per_page', 10);
+        $perPage = $request->per_page ?? 10;
         $query = Payment::with(['transaction.category', 'account', 'paymentMethod']);
-        $this->applyPaymentFilters($query);
+        $this->applyPaymentFilters($query, $request);
         return PaymentResource::collection($query->paginate($perPage));
     }
 
-    protected function applyPaymentFilters(&$query): void
+    protected function applyPaymentFilters(&$query, $request): void
     {
-        $onlyOverdue = request()->get('only_overdue', false);
-        $type = request()->get('type');
-        $month = request()->get('month');
-        $dateFilterOption = request()->get('date_filter_option', 'due_date');
-        $date = $month ? Carbon::parse("{$month}-01") : now();
-        $fromDate = $date->copy()->startOfMonth();
-        $toDate = $date->copy()->endOfMonth();
+        $type = $request->type ?? '';
+        $accounts = $request->account ?? [];
+        $status = $request->status ?? [];
+        $dateFilterOption = $request->date_filter_option ?? 'due_date';
+        $dateFrom = $request->date_from ?? now()->startOfMonth();
+        $dateTo = $request->date_to ?? now()->endOfMonth();
 
-        if ($type) {
+        if (!empty($type)) {
             $query->whereHas('transaction.category', function ($q) use ($type) {
                 $q->where('type', $type);
             });
         }
 
-        if ($onlyOverdue) {
-            $dateFilterOption = 'due_date';
-            $query->whereNull('payment_date');
+        if (!empty($accounts)) {
+            $query->whereIn('account_id', $accounts);
         }
 
-        $query->whereBetween($dateFilterOption, [$fromDate, $toDate]);
+        if (!empty($status)) {
+            $query->where(function($q) use ($status) {
+                if (in_array('paid', $status)) {
+                    $q->orWhereNotNull('payment_date');
+                }
+                
+                if (in_array('overdue', $status)) {
+                    $q->orWhere(function($subQuery) {
+                        $subQuery->whereNull('payment_date')
+                                ->where('due_date', '<', now()->toDateString());
+                    });
+                }
+                
+                if (in_array('pending', $status)) {
+                    $q->orWhere(function($subQuery) {
+                        $subQuery->whereNull('payment_date')
+                                ->where('due_date', '>=', now()->toDateString());
+                    });
+                }
+            });
+        }
+
+        $query->whereBetween($dateFilterOption, [$dateFrom, $dateTo]);
     }
 
     public function store(TransactionStoreUpdateRequest $request)
