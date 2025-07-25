@@ -16,6 +16,7 @@ class TransactionResource extends JsonResource
             'category' => [
                 'id' => $this->category->id,
                 'name' => $this->category->name,
+                'type' => $this->category->type
             ],
             'payments' => $this->payments->map(function ($payment) {
                 return [
