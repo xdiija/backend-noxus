@@ -12,7 +12,8 @@ use Illuminate\Support\Facades\DB;
 use App\Helpers\Money;
 use App\Helpers\LogHelper;
 use App\Http\Requests\PaymentsGetRequest;
-use Illuminate\Support\Carbon;
+use App\Http\Requests\TransactionGetRequest;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Validator;
 
 class TransactionController extends Controller
@@ -23,13 +24,57 @@ class TransactionController extends Controller
         protected Payment $paymentModel
     ) {}
 
-    public function index()
+    public function index(TransactionGetRequest $request)
     {
-        return TransactionResource::collection(
-            $this->transactionModel->with([
-                'category', 'payments.account', 'payments.paymentMethod'
-            ])->get()
-        );
+        $perPage = $request->per_page ?? 10;
+
+        $query = $this->transactionModel->with([
+            'category', 'payments.account', 'payments.paymentMethod'
+        ]);
+
+        $this->applyTransactionFilters($query, $request);
+
+        return TransactionResource::collection($query->paginate($perPage));
+    }
+
+    protected function applyTransactionFilters(&$query, $request): void
+    {
+        $type = $request->type;
+        $paymentTypes = $request->payment_type;
+        $categoryId = $request->category;
+        $dateFrom = $request->date_from ?? now()->startOfMonth();
+        $dateTo = $request->date_to ?? now()->endOfMonth();
+
+        if ($type) {
+            $query->whereHas('category', function ($q) use ($type) {
+                $q->where('type', $type);
+            });
+        }
+
+        if (!empty($paymentTypes)) {
+            $query->where(function ($q) use ($paymentTypes) {
+                if (in_array('single', $paymentTypes)) {
+                    $q->orHas('payments', '=', 1);
+                }
+
+                if (in_array('installment', $paymentTypes)) {
+                    $q->orHas('payments', '>', 1);
+                }
+
+                if (in_array('recurrent', $paymentTypes)) {
+                    $q->orWhere('is_recurrent', true); // Adjust as needed for your DB structure
+                }
+            });
+        }
+
+        if ($categoryId) {
+            $query->where('category_id', $categoryId);
+        }
+
+        $query->whereBetween('created_at', [
+            Carbon::parse($dateFrom)->startOfDay(),
+            Carbon::parse($dateTo)->endOfDay()
+        ]);
     }
 
     public function getPayments(PaymentsGetRequest $request)
@@ -79,6 +124,11 @@ class TransactionController extends Controller
                     });
                 }
             });
+        }
+
+        if($dateFilterOption != 'due_date'){
+            $dateFrom = Carbon::parse($dateFrom)->startOfDay();
+            $dateTo = Carbon::parse($dateTo)->endOfDay();
         }
 
         $query->whereBetween($dateFilterOption, [$dateFrom, $dateTo]);
@@ -189,17 +239,19 @@ class TransactionController extends Controller
         $newAccount = $this->getAccountForUpdate($existingPayment, $newPaymentData['account_id']);
         
         if ($existingPayment->payment_date) {
+            $newPaymentData['status'] = Payment::STATUS_PENDING;
             $this->revertAccountBalance($existingPayment);
         }
         
-        $existingPayment->update($newPaymentData);
-        
         if (!empty($newPaymentData['payment_date'])) {
+            $newPaymentData['status'] = Payment::STATUS_PAID;
             $newAccount->adjustBalance(
                 $transaction->category->type, 
                 Money::fromFloatToInt($newPaymentData['amount'])
             );
         }
+
+        $existingPayment->update($newPaymentData);
     }
 
     private function getAccountForUpdate(Payment $existingPayment, int $newPaymentAccountId): Account
@@ -215,6 +267,10 @@ class TransactionController extends Controller
         $payment = Payment::create($paymentData);
 
         if (!empty($payment->payment_date)) {
+
+            $payment->status = Payment::STATUS_PAID;
+            $payment->save();
+
             $payment->account->adjustBalance(
                 $transaction->category->type, Money::fromFloatToInt($paymentData['amount'])
             );
@@ -290,7 +346,10 @@ class TransactionController extends Controller
         } catch (\Throwable $th) {
             LogHelper::logThrowable('Operation Failed', $th);
             DB::rollBack();
-            return response()->json(['error' => $th->getMessage()], 500);
+            return response()->json([
+                'message' => 'Erro interno no servidor.',
+                'errors' => ['exception' => [$th->getMessage()]]
+            ], 400);
         }
     }
 
