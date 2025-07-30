@@ -7,12 +7,15 @@ use App\Http\Resources\TransactionResource;
 use App\Http\Resources\PaymentResource;
 use App\Models\Transaction;
 use App\Models\Payment;
+use App\Models\TransactionCategory;
+
 use App\Models\Account;
 use Illuminate\Support\Facades\DB;
 use App\Helpers\Money;
 use App\Helpers\LogHelper;
 use App\Http\Requests\PaymentsGetRequest;
 use App\Http\Requests\TransactionGetRequest;
+use App\Http\Requests\TransferStoreRequest;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Validator;
 
@@ -161,6 +164,97 @@ class TransactionController extends Controller
         } catch (\Throwable $th) {
             LogHelper::logThrowable('Operation Failed', $th);
             DB::rollBack();
+            return response()->json(['error' => $th->getMessage()], 500);
+        }
+    }
+
+    public function storeTransferency(TransferStoreRequest $request)
+    {
+        $validated = $request->validated();
+
+        try {
+            DB::beginTransaction();
+
+            $amount = $validated['amount'];
+            $amountInCents = Money::fromFloatToInt($amount);
+            $transferDate = $validated['transfer_date'];
+
+            $fromAccount = Account::lockForUpdate()->findOrFail($validated['from_account_id']);
+            $toAccount = Account::lockForUpdate()->findOrFail($validated['to_account_id']);
+
+            $transferCategory = TransactionCategory::where('type', 'transfer')->first();
+
+            // Create a transaction
+            $transaction = Transaction::create([
+                'description' => $validated['description'] ?? "Transfer from {$fromAccount->name} to {$toAccount->name}",
+                'category_id' => $transferCategory->id,
+            ]);
+
+            // Payment for source account (outgoing)
+            $paymentOut = Payment::create([
+                'transaction_id' => $transaction->id,
+                'account_id' => $fromAccount->id,
+                'payment_method_id' => 1, // define default method or pass from request
+                'amount' => $amount,
+                'discount' => 0,
+                'increase' => 0,
+                'due_date' => $transferDate,
+                'payment_date' => $transferDate,
+                'status' => Payment::STATUS_PAID,
+            ]);
+
+            // Payment for destination account (incoming)
+            $paymentIn = Payment::create([
+                'transaction_id' => $transaction->id,
+                'account_id' => $toAccount->id,
+                'payment_method_id' => 1,
+                'amount' => $amount,
+                'discount' => 0,
+                'increase' => 0,
+                'due_date' => $transferDate,
+                'payment_date' => $transferDate,
+                'status' => Payment::STATUS_PAID,
+            ]);
+
+            // Adjust balances
+            $fromAccount->adjustBalance('expense', $amountInCents);
+            $toAccount->adjustBalance('income', $amountInCents);
+
+            // Log account movements
+            DB::table('account_movements')->insert([
+                [
+                    'account_id' => $fromAccount->id,
+                    'payment_id' => $paymentOut->id,
+                    'transaction_id' => $transaction->id,
+                    'type' => 'transfer_out',
+                    'amount' => $amount,
+                    'balance_after' => $fromAccount->fresh()->balance,
+                    'description' => $validated['description'],
+                    'created_at' => $transferDate,
+                    'updated_at' => now(),
+                ],
+                [
+                    'account_id' => $toAccount->id,
+                    'payment_id' => $paymentIn->id,
+                    'transaction_id' => $transaction->id,
+                    'type' => 'transfer_in',
+                    'amount' => $amount,
+                    'balance_after' => $toAccount->fresh()->balance,
+                    'description' => $validated['description'],
+                    'created_at' => $transferDate,
+                    'updated_at' => now(),
+                ]
+            ]);
+
+            DB::commit();
+
+            return new TransactionResource(
+                $transaction->load(['category', 'payments.account', 'payments.paymentMethod'])
+            );
+
+        } catch (\Throwable $th) {
+            DB::rollBack();
+            LogHelper::logThrowable('Transferência falhou', $th);
             return response()->json(['error' => $th->getMessage()], 500);
         }
     }
