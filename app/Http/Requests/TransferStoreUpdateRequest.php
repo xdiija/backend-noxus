@@ -4,7 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class TransferStoreRequest extends FormRequest
+class TransferStoreUpdateRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -17,7 +17,7 @@ class TransferStoreRequest extends FormRequest
             'from_account_id' => ['required', 'exists:accounts,id'],
             'to_account_id' => ['required', 'exists:accounts,id', 'different:from_account_id'],
             'amount' => ['required', 'numeric', 'min:0.01'],
-            'transfer_date' => ['required', 'date', 'before_or_equal:today'],
+            'transfer_date' => [ 'required', 'date', 'date_format:Y-m-d', 'before_or_equal:today',],
             'description' => ['nullable', 'string', 'max:255'],
         ];
     }
@@ -39,6 +39,7 @@ class TransferStoreRequest extends FormRequest
             'transfer_date.required' => 'A data da transferência é obrigatória.',
             'transfer_date.date' => 'A data da transferência deve ser válida.',
             'transfer_date.before_or_equal' => 'A data da transferência não pode ser no futuro.',
+            'transfer_date.date_format' => 'A data da transferência deve estar no formato YYYY-MM-DD (ex: 2025-07-06).',
 
             'description.max' => 'A descrição não pode ter mais que 255 caracteres.',
         ];
