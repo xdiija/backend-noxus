@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('transaction_categories', function (Blueprint $table) {
             $table->id();
             $table->string('name')->unique();
-            $table->enum('type', ['income', 'expense']);
+            $table->enum('type', ['income', 'expense', 'transfer']);
             $table->unsignedBigInteger('parent_id')->nullable();
             $table->boolean('status')->default(1);
             $table->softDeletes();

@@ -17,7 +17,7 @@ class TransactionGetRequest extends FormRequest
     {
         return [
             'per_page' => ['nullable', 'numeric','max:100'],
-            'type' => ['nullable', Rule::in(['expense', 'income'])],
+            'type' => ['nullable', Rule::in(['expense', 'income', 'transfer'])],
             'payment_type' => ['nullable', 'array'], 
             'payment_type.*' => ['required', 'string', Rule::in(['single', 'installment', 'recurrent'])],
             'category' => ['nullable', 'exists:transaction_categories,id'],

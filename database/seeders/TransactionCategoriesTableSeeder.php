@@ -76,6 +76,12 @@ class TransactionCategoriesTableSeeder extends Seeder
                 'parent_id' => null,
                 'status' => 1
             ],
+            [
+                'name' => 'Transferência Entre Contas',
+                'type' => 'transfer',
+                'parent_id' => null,
+                'status' => 1
+            ],
         ];
 
         foreach ($transactionCategories as $transactionCategorie) {

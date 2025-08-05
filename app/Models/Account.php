@@ -17,7 +17,7 @@ class Account extends Model
         'status'
     ];
 
-    public function adjustBalance(string $type, int $amount): void
+    public function adjustBalance(string $type, int $amount, Payment $payment, ?bool $isReversal = false): void
     {
         if (!in_array($type, ['income', 'expense'])) {
             throw new \InvalidArgumentException("Tipo de transação inválido.");
@@ -36,5 +36,19 @@ class Account extends Model
 
         $this->balance = Money::fromIntToFloat($balance);
         $this->save();
+
+        $this->registerMovement($payment, $type, $isReversal);
+    }
+
+    public function registerMovement(?Payment $payment, string $type, bool $isReversal): void
+    {
+        AccountMovement::create([
+            'account_id' => $this->id,
+            'payment_id' => $payment?->id,
+            'type' => $type,
+            'is_reversal' => $isReversal,
+            'amount' => $payment?->amount ?? 0,
+            'balance_after' => $this->fresh()->balance,
+        ]);
     }
 }

@@ -7,12 +7,15 @@ use App\Http\Resources\TransactionResource;
 use App\Http\Resources\PaymentResource;
 use App\Models\Transaction;
 use App\Models\Payment;
+use App\Models\AccountMovement;
+use App\Models\TransactionCategory;
 use App\Models\Account;
 use Illuminate\Support\Facades\DB;
 use App\Helpers\Money;
 use App\Helpers\LogHelper;
 use App\Http\Requests\PaymentsGetRequest;
 use App\Http\Requests\TransactionGetRequest;
+use App\Http\Requests\TransferStoreUpdateRequest;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Validator;
 
@@ -94,11 +97,13 @@ class TransactionController extends Controller
         $dateFrom = $request->date_from ?? now()->startOfMonth();
         $dateTo = $request->date_to ?? now()->endOfMonth();
 
-        if (!empty($type)) {
-            $query->whereHas('transaction.category', function ($q) use ($type) {
+        $query->whereHas('transaction.category', function ($q) use ($type) {
+            $q->where('type', '<>', 'transfer');
+
+            if (!empty($type)) {
                 $q->where('type', $type);
-            });
-        }
+            }
+        });
 
         if (!empty($accounts)) {
             $query->whereIn('account_id', $accounts);
@@ -147,7 +152,8 @@ class TransactionController extends Controller
             ]);
     
             foreach ($data['payments'] as $paymentData) {
-                $this->createPayment($transaction, $paymentData);
+                $paymentData['transaction_id'] = $transaction->id;
+                $this->createPayment($transaction->category->type, $paymentData);
             }
             
             DB::commit();
@@ -161,6 +167,65 @@ class TransactionController extends Controller
         } catch (\Throwable $th) {
             LogHelper::logThrowable('Operation Failed', $th);
             DB::rollBack();
+            return response()->json(['error' => $th->getMessage()], 500);
+        }
+    }
+
+    public function storeTransferency(TransferStoreUpdateRequest $request)
+    {
+        $validated = $request->validated();
+
+        try {
+            DB::beginTransaction();
+            
+            $fromAccount = Account::lockForUpdate()->findOrFail($validated['from_account_id']);
+            $toAccount = Account::lockForUpdate()->findOrFail($validated['to_account_id']);
+            $transferCategory = TransactionCategory::where('type', 'transfer')->first();
+
+            $transaction = Transaction::create([
+                'description' => $validated['description'] ?? "Transfer from {$fromAccount->name} to {$toAccount->name}",
+                'category_id' => $transferCategory->id,
+            ]);
+
+            //TODO SET PAYMENT METHOD
+
+            $this->createPayment(
+                'expense',
+                [
+                    'transaction_id' => $transaction->id,
+                    'account_id' => $fromAccount->id,
+                    'payment_method_id' => 1,
+                    'amount' => $validated['amount'],
+                    'discount' => 0,
+                    'increase' => 0,
+                    'due_date' => $validated['transfer_date'],
+                    'payment_date' => $validated['transfer_date'],
+                ]
+            );
+
+            $this->createPayment(
+                'income',
+                [
+                    'transaction_id' => $transaction->id,
+                    'account_id' => $toAccount->id,
+                    'payment_method_id' => 1,
+                    'amount' => $validated['amount'],
+                    'discount' => 0,
+                    'increase' => 0,
+                    'due_date' => $validated['transfer_date'],
+                    'payment_date' => $validated['transfer_date']
+                ]
+            );
+                
+            DB::commit();
+
+            return new TransactionResource(
+                $transaction->load(['category', 'payments.account', 'payments.paymentMethod'])
+            );
+
+        } catch (\Throwable $th) {
+            DB::rollBack();
+            LogHelper::logThrowable('Transferência falhou', $th);
             return response()->json(['error' => $th->getMessage()], 500);
         }
     }
@@ -214,8 +279,8 @@ class TransactionController extends Controller
                 $this->updatePayment($transaction, $oldPayments[$newPaymentData['id']], $newPaymentData);
                 continue;
             } 
-            
-            $this->createPayment($transaction, $newPaymentData);
+            $newPaymentData['transaction_id'] = $transaction->id;
+            $this->createPayment($transaction->category->type, $newPaymentData);
         }
     }
 
@@ -247,7 +312,8 @@ class TransactionController extends Controller
             $newPaymentData['status'] = Payment::STATUS_PAID;
             $newAccount->adjustBalance(
                 $transaction->category->type, 
-                Money::fromFloatToInt($newPaymentData['amount'])
+                Money::fromFloatToInt($newPaymentData['amount']),
+                $existingPayment
             );
         }
 
@@ -261,9 +327,8 @@ class TransactionController extends Controller
             : $this->accountModel->findOrFail($newPaymentAccountId);
     }
 
-    private function createPayment(Transaction $transaction, array $paymentData): void
+    private function createPayment(string $transactionType, array $paymentData): Payment
     {
-        $paymentData['transaction_id'] = $transaction->id;
         $payment = Payment::create($paymentData);
 
         if (!empty($payment->payment_date)) {
@@ -272,11 +337,13 @@ class TransactionController extends Controller
             $payment->save();
 
             $payment->account->adjustBalance(
-                $transaction->category->type, Money::fromFloatToInt($paymentData['amount'])
+                $transactionType, Money::fromFloatToInt($paymentData['amount']), $payment
             );
         }
 
         LogHelper::logInfo('createPayment', $paymentData);
+
+        return $payment;
     }
 
     private function revertAccountBalance(Payment $payment)
@@ -289,7 +356,7 @@ class TransactionController extends Controller
 
         $typeReverse = $transactionType === 'income' ? 'expense' : 'income';
         $amountInCents = Money::fromFloatToInt($payment->amount);
-        $payment->account->adjustBalance($typeReverse, $amountInCents);
+        $payment->account->adjustBalance($typeReverse, $amountInCents, $payment, true);
     }
 
     public function changePaymentStatus($id)
@@ -335,8 +402,8 @@ class TransactionController extends Controller
             $payment->save();
 
             $payment->account->adjustBalance(
-                $payment->transaction->category->type, Money::fromFloatToInt($payment->amount)
-            );            
+                $payment->transaction->category->type, Money::fromFloatToInt($payment->amount), $payment
+            );         
 
             DB::commit();
 

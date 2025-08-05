@@ -113,6 +113,7 @@ Route::prefix('transactions')->middleware('auth')->controller(TransactionControl
     Route::get('/{id}', 'show')->middleware('check.permissions:Transações,view');
     Route::put('/{id}', 'update')->middleware('check.permissions:Transações,update');
     Route::post('/', 'store')->middleware('check.permissions:Transações,create');
+    Route::post('/transfer', 'storeTransferency')->middleware('check.permissions:Transações,create');
     Route::put('/{id}/status', 'changeStatus')->middleware('check.permissions:Transações,update');
     Route::put('/payments/{id}/status', 'changePaymentStatus')->middleware('check.permissions:Transações,update');
     Route::delete('/{id}', 'destroy')->middleware('check.permissions:Transações,update');
