@@ -65,9 +65,13 @@ class AuthController extends Controller
      */
     public function logout()
     {
+        $cookie = cookie()->forget('token');
+        
         auth()->logout();
-
-        return response()->json(['message' => 'Successfully logged out']);
+        
+        return response()
+            ->json(['message' => 'Successfully logged out'])
+            ->withCookie($cookie);
     }
 
     /**
@@ -89,12 +93,25 @@ class AuthController extends Controller
      */
     protected function respondWithToken($token, $user = [], $menus = [])
     {
-        return response()->json([
-            'access_token' => $token,
-            'user' => $user,
-            'menus' => $menus,
-            'token_type' => 'bearer',
-            'expires_in' => auth()->factory()->getTTL() * 60
-        ]);
+        $cookie = cookie(
+            'token', 
+            $token, 
+            auth()->factory()->getTTL(), // minutes
+            null, 
+            null, 
+            true,  // Secure
+            true,  // HttpOnly
+            false, 
+            'Strict'
+        );
+
+        return response()
+            ->json([
+                'user' => $user,
+                'menus' => $menus,
+                'expires_in' => auth()->factory()->getTTL() * 60
+            ])
+            ->withCookie($cookie);
     }
+
 }
