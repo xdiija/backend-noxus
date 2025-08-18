@@ -130,6 +130,16 @@ class MenusTableSeeder extends Seeder
                 'status' => 1,
                 'exclusive_noxus' => 0
             ],
+            [
+                //id: 13
+                'name' => 'Fornecedores',
+                'route' => '/suppliers',
+                'icon' => 'person_4',
+                'parent_id' => 5,
+                'order' => 3,
+                'status' => 1,
+                'exclusive_noxus' => 0
+            ],
         ];
 
         foreach ($menus as $menu) {
