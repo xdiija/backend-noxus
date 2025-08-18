@@ -19,11 +19,15 @@ class PaymentMethodsTableSeeder extends Seeder
                 'status' => 1
             ],
             [
-                'name' => 'Cartão de Débito',
+                'name' => 'TED',
                 'status' => 1
             ],
             [
-                'name' => 'Cartão de Crédito',
+                'name' => 'Cartão de débito',
+                'status' => 1
+            ],
+            [
+                'name' => 'Cartão de crédito',
                 'status' => 1
             ],
             [

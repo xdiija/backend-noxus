@@ -12,6 +12,7 @@ class AccountMovement extends Model
         'payment_id',
         'type',
         'amount',
+        'is_reversal',
         'balance_after',
     ];
 

@@ -7,6 +7,8 @@ use App\Http\Resources\UserResource;
 use App\Models\User;
 use App\Services\PermissionService;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 
 /**
  * @OA\Info(title="Documentação Noxus API", version="1.0")
@@ -90,6 +92,35 @@ class UserController extends Controller
     {   
         $user = $this->model->findOrFail($id);
         $user->status = $user->status === 1 ? 2 : 1;
+        $user->save();
+        return new UserResource($user);
+    }
+     
+    public function changePassword(Request $request, string $id)
+    {   
+        if($id != auth()->user()->id){
+            return response()->json([
+                'errors' => [
+                    'id' => 'ID diferente do usuário logado!'
+                ]
+            ], 400);
+        }
+
+        $user = $this->model->findOrFail($id);
+        $data = $request->validate([
+            'old_password' => 'required',
+            'new_password' => 'required',
+        ]);
+
+        if(!Hash::check($data['old_password'], $user->password)){
+            return response()->json([
+                'errors' => [
+                    'old_password' => 'Senha antiga incorreta!'
+                ]
+            ], 400);
+        }
+
+        $user->update(['password' => bcrypt($data['new_password'])]);
         $user->save();
         return new UserResource($user);
     }

@@ -7,7 +7,6 @@ use App\Http\Resources\TransactionResource;
 use App\Http\Resources\PaymentResource;
 use App\Models\Transaction;
 use App\Models\Payment;
-use App\Models\AccountMovement;
 use App\Models\TransactionCategory;
 use App\Models\Account;
 use Illuminate\Support\Facades\DB;
@@ -182,19 +181,20 @@ class TransactionController extends Controller
             $toAccount = Account::lockForUpdate()->findOrFail($validated['to_account_id']);
             $transferCategory = TransactionCategory::where('type', 'transfer')->first();
 
+
+            var_dump($transferCategory);
+
             $transaction = Transaction::create([
                 'description' => $validated['description'] ?? "Transfer from {$fromAccount->name} to {$toAccount->name}",
                 'category_id' => $transferCategory->id,
             ]);
-
-            //TODO SET PAYMENT METHOD
 
             $this->createPayment(
                 'expense',
                 [
                     'transaction_id' => $transaction->id,
                     'account_id' => $fromAccount->id,
-                    'payment_method_id' => 1,
+                    'payment_method_id' => $validated['payment_method_id'],
                     'amount' => $validated['amount'],
                     'discount' => 0,
                     'increase' => 0,
@@ -208,7 +208,7 @@ class TransactionController extends Controller
                 [
                     'transaction_id' => $transaction->id,
                     'account_id' => $toAccount->id,
-                    'payment_method_id' => 1,
+                    'payment_method_id' => $validated['payment_method_id'],
                     'amount' => $validated['amount'],
                     'discount' => 0,
                     'increase' => 0,
@@ -229,20 +229,74 @@ class TransactionController extends Controller
             return response()->json(['error' => $th->getMessage()], 500);
         }
     }
+
+    public function updateTransferency(TransferStoreUpdateRequest $request, $id)
+    {
+        $validated = $request->validated();
+
+        try {
+            DB::beginTransaction();
+
+            $transaction = $this->transactionModel
+                ->with('payments.account', 'payments.transaction.category')
+                ->findOrFail($id);
+
+            $transferCategory = TransactionCategory::where('type', 'transfer')->firstOrFail();
+
+            if ($transaction->category_id !== $transferCategory->id) {
+                return response()->json(['error' => 'Transação não é do tipo transferência.'], 422);
+            }
+
+            $fromAccount = Account::lockForUpdate()->findOrFail($validated['from_account_id']);
+            $toAccount = Account::lockForUpdate()->findOrFail($validated['to_account_id']);
+
+            $transaction->update([
+                'description' => $validated['description'] ?? "Transfer from {$fromAccount->name} to {$toAccount->name}",
+            ]);
+
+            $oldPayments = $transaction->payments->keyBy('id')->all();
+
+            $newPaymentData = [
+                'transaction_id' => $transaction->id,
+                'account_id' => $fromAccount->id,
+                'payment_method_id' => $validated['payment_method_id'],
+                'amount' => $validated['amount'],
+                'discount' => 0,
+                'increase' => 0,
+                'due_date' => $validated['transfer_date'],
+                'payment_date' => $validated['transfer_date'],
+            ];
+
+            $this->updatePayment($transaction, $oldPayments[$validated['payment_in_id']], $newPaymentData);
+            $this->updatePayment($transaction, $oldPayments[$validated['payment_out_id']], $newPaymentData);
+
+            DB::commit();
+
+            return new TransactionResource(
+                $transaction->load(['category', 'payments.account', 'payments.paymentMethod'])
+            );
+
+        } catch (\Throwable $th) {
+            DB::rollBack();
+            LogHelper::logThrowable('Falha na atualização da transferência', $th);
+            return response()->json(['error' => $th->getMessage()], 500);
+        }
+    }
     
     public function show($id)
     {
         return new TransactionResource(
-            $this->transactionModel->with(['category', 'account'])->findOrFail($id)
+            $this->transactionModel->with(['category', 'payments.account', 'payments.paymentMethod'])->findOrFail($id)
         );
     }
 
     public function update(TransactionStoreUpdateRequest $request, $id)
     {
+        $data = $request->validated();
+
         try {
             DB::beginTransaction();
             
-            $data = $request->validated();
             $transaction = $this->transactionModel->with(
                 'payments.account', 'payments.transaction.category'
             )->findOrFail($id);
@@ -303,12 +357,12 @@ class TransactionController extends Controller
         LogHelper::logInfo('updatePayment', $newPaymentData);
         $newAccount = $this->getAccountForUpdate($existingPayment, $newPaymentData['account_id']);
         
-        if ($existingPayment->payment_date) {
+        if ($this->shouldRevertBalanceOnUpdate($existingPayment, $newPaymentData)) {
             $newPaymentData['status'] = Payment::STATUS_PENDING;
             $this->revertAccountBalance($existingPayment);
         }
         
-        if (!empty($newPaymentData['payment_date'])) {
+        if ($this->shouldAdjustBalanceOnUpdate($existingPayment, $newPaymentData)) {
             $newPaymentData['status'] = Payment::STATUS_PAID;
             $newAccount->adjustBalance(
                 $transaction->category->type, 
@@ -318,6 +372,24 @@ class TransactionController extends Controller
         }
 
         $existingPayment->update($newPaymentData);
+    }
+
+    private function shouldRevertBalanceOnUpdate(Payment $existingPayment, array $newPaymentData): bool
+    {
+        return $existingPayment->payment_date && (
+            empty($newPaymentData['payment_date']) ||
+            $existingPayment->amount != $newPaymentData['amount'] ||
+            $existingPayment->account->id != $newPaymentData['account_id']
+        );
+    }
+
+    private function shouldAdjustBalanceOnUpdate(Payment $existingPayment, array $newPaymentData): bool
+    {
+        return !empty($newPaymentData['payment_date']) && (
+            empty($existingPayment->payment_date) ||
+            $existingPayment->amount != $newPaymentData['amount'] ||
+            $existingPayment->account->id != $newPaymentData['account_id']
+        );
     }
 
     private function getAccountForUpdate(Payment $existingPayment, int $newPaymentAccountId): Account

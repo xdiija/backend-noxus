@@ -36,6 +36,7 @@ Route::prefix('users')->middleware('auth')->controller(UserController::class)->g
     Route::post('/', 'store')->middleware('check.permissions:Usuários,create');
     Route::put('/{id}/status', 'changeStatus')->middleware('check.permissions:Usuários,update');
     Route::delete('/{id}', 'destroy')->middleware('check.permissions:Usuários,update');
+    Route::put('/{id}/change-password', 'changePassword');
 });
 
 Route::prefix('roles')->middleware('auth')->controller(RoleController::class)->group(function () {
