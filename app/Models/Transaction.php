@@ -15,6 +15,8 @@ class Transaction extends Model
     protected $fillable = [
         'description',
         'category_id',
+        'payment_type',
+        'payment_count'
     ];
 
     public function category()

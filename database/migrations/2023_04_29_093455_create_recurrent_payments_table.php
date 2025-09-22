@@ -8,17 +8,16 @@ return new class extends Migration
 {
     public function up()
     {
-        Schema::create('payments', function (Blueprint $table) {
+        Schema::create('recurrent_payments', function (Blueprint $table) {
             $table->id('id');
             $table->unsignedBigInteger('transaction_id');
             $table->unsignedBigInteger('account_id');
             $table->unsignedBigInteger('payment_method_id');
-            $table->integer('payment_number');
             $table->decimal('amount', 10, 2);
-            $table->decimal('discount', 10, 2);
-            $table->decimal('increase', 10, 2);
-            $table->date('due_date');
-            $table->date('payment_date')->nullable();
+            $table->enum('interval', ['weekly', 'monthly', 'yearly'])->nullable();
+            $table->date('start_date');
+            $table->date('next_date');
+            $table->date('end_date')->nullable();
             $table->integer('status')->default(1);
             $table->softDeletes();
             $table->timestamps();
@@ -30,6 +29,8 @@ return new class extends Migration
 
     public function down()
     {
-        Schema::dropIfExists('payments');
+        Schema::disableForeignKeyConstraints();
+        Schema::dropIfExists('recurrent_payments');
+        Schema::enableForeignKeyConstraints();
     }
 };
