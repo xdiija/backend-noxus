@@ -144,10 +144,17 @@ class TransactionController extends Controller
             DB::beginTransaction();
 
             $data = $request->validated();
+
+            $paymentCount = null;
+            if ($data['payment_type'] != 'recurrent') {
+                $paymentCount = count($data['payments']);
+            }
     
             $transaction = $this->transactionModel->create([
                 'description' => $data['description'],
                 'category_id' => $data['category_id'],
+                'payment_type' => $data['payment_type'],
+                'payment_count' => $paymentCount,
             ]);
     
             foreach ($data['payments'] as $paymentData) {
@@ -169,6 +176,12 @@ class TransactionController extends Controller
             return response()->json(['error' => $th->getMessage()], 500);
         }
     }
+
+    private function storeRecurrent()
+    {
+        //todo    
+    }
+    
 
     public function storeTransferency(TransferStoreUpdateRequest $request)
     {

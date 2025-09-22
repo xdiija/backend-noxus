@@ -3,8 +3,6 @@
 namespace App\Http\Resources;
 
 use App\Helpers\DatetHelper;
-use App\Helpers\Money;
-use App\Helpers\StatusHelper;
 use App\Models\Payment;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -15,6 +13,7 @@ class PaymentResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            'payment_number' => $this->payment_number,
             'transaction' => $this->whenLoaded('transaction', function () {
                 return [
                     'id' => $this->transaction_id,

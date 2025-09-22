@@ -12,6 +12,8 @@ return new class extends Migration
             $table->id('id');
             $table->text('description')->nullable();
             $table->unsignedBigInteger('category_id');
+            $table->enum('payment_type', ['single', 'installment', 'recurrent']);
+            $table->integer('payment_count')->nullable();
             $table->softDeletes();
             $table->timestamps();
             $table->foreign('category_id')->references('id')->on('transaction_categories')->onDelete('cascade');
