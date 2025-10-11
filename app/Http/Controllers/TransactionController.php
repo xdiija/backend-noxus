@@ -15,6 +15,7 @@ use App\Helpers\LogHelper;
 use App\Http\Requests\PaymentsGetRequest;
 use App\Http\Requests\TransactionGetRequest;
 use App\Http\Requests\TransferStoreUpdateRequest;
+use App\Models\RecurrentPayment;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Validator;
 
@@ -23,6 +24,7 @@ class TransactionController extends Controller
     public function __construct(
         protected Transaction $transactionModel,
         protected Account $accountModel,
+        protected RecurrentPayment $recurrentPayment,
         protected Payment $paymentModel
     ) {}
 
@@ -145,10 +147,7 @@ class TransactionController extends Controller
 
             $data = $request->validated();
 
-            $paymentCount = null;
-            if ($data['payment_type'] != 'recurrent') {
-                $paymentCount = count($data['payments']);
-            }
+            $paymentCount = $data['payment_type'] != 'recurrent' ? count($data['payments']) : null;
     
             $transaction = $this->transactionModel->create([
                 'description' => $data['description'],
@@ -160,6 +159,11 @@ class TransactionController extends Controller
             foreach ($data['payments'] as $paymentData) {
                 $paymentData['transaction_id'] = $transaction->id;
                 $this->createPayment($transaction->category->type, $paymentData);
+            }
+
+            if($data['payment_type'] == 'recurrent'){
+                $data['transaction_id'] = $transaction->id;
+                $this->storeRecurrent($data);
             }
             
             DB::commit();
@@ -177,9 +181,19 @@ class TransactionController extends Controller
         }
     }
 
-    private function storeRecurrent()
+    private function storeRecurrent(array $data)
     {
-        //todo    
+        $recurrentPayment = $this->recurrentPayment->create([
+            'transaction_id' => $data['transaction_id'],
+            'account_id' => $data['payments'][0]['account_id'],
+            'payment_method_id' => $data['payments'][0]['payment_method_id'],
+            'interval' => $data['interval'],
+            'amount' => $data['total_amount'],
+            'start_date' => $data['start_date'], //criar campo no front
+            'next_date' => $data['next_date'], //criar campo no front
+            'end_date' => null,
+            'status' => 1,
+        ]);
     }
     
 
