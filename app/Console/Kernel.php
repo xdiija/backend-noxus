@@ -13,6 +13,9 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule): void
     {
         // $schedule->command('inspire')->hourly();
+        $schedule->command('app:generate-recurring-payments')->everyMinute()
+            ->withoutOverlapping()->sendOutputTo(storage_path('logs/recurring.log'));
+
     }
 
     /**

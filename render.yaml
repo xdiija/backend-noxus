@@ -1,0 +1,28 @@
+services:
+  - type: web
+    name: laravel-app
+    env: docker
+    docker:
+      dockerfile: Dockerfile.render
+    buildCommand: ""
+    startCommand: cd /var/www && php artisan optimize && php artisan migrate --force && php-fpm
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: false
+
+  - type: web
+    name: nginx
+    env: docker
+    docker:
+      dockerfile: Dockerfile.nginx
+    ports:
+      - port: 80
+        http: true
+    envVars:
+      - key: APP_URL
+        fromService:
+          name: laravel-app
+          type: web
+          property: host

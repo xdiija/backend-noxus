@@ -15,6 +15,8 @@ class RecurrentPayment extends Model
     protected $fillable = [
         'transaction_id',
         'amount',
+        'account_id',
+        'payment_method_id',
         'interval',
         'start_date',
         'next_date',
