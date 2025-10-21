@@ -102,7 +102,7 @@ class AuthController extends Controller
             true,  // Secure
             true,  // HttpOnly
             false, 
-            'Strict'
+            'None'
         );
 
         return response()
