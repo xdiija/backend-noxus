@@ -23,17 +23,18 @@ class TransactionResource extends JsonResource
             'payments' => $this->payments->map(function ($payment) {
                 return [
                     'id' => $payment->id,
-                    'account' => [
-                        'id' => $payment->account->id,
-                        'name' => $payment->account->name,
-                    ],
-                    'payment_method' => [
-                        'id' => $payment->paymentMethod->id,
-                        'name' => $payment->paymentMethod->name,
-                    ],
+                    'account' => $payment->account ? [
+                        'id' => $payment->account?->id,
+                        'name' => $payment->account?->name,
+                    ] : null,
+                    'payment_method' => $payment->paymentMethod ? [
+                        'id' => $payment->paymentMethod?->id,
+                        'name' => $payment->paymentMethod?->name,
+                    ] : null,
                     'amount' => $payment->amount,
                     'discount' => $payment->discount,
                     'increase' => $payment->increase,
+                    'created_at' => DatetHelper::toBR($payment->created_at),
                     'due_date' => DatetHelper::toBR($payment->due_date),
                     'payment_date' => DatetHelper::toBR($payment->payment_date),
                     'status' => $payment->status,
