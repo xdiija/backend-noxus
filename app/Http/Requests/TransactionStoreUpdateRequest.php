@@ -18,6 +18,7 @@ class TransactionStoreUpdateRequest extends FormRequest
             'description' => ['nullable', 'string', 'max:1000'],
             'category_id' => ['required', 'exists:transaction_categories,id'],
             'customer_id' => [ 'required_if:type,income', 'exists:customers,id'],
+            'supplier_id' => [ 'required_if:type,expense', 'exists:suppliers,id'],
             'payment_type' => ['required', Rule::in(['single', 'installment', 'recurrent'])],
             'interval' => [
                 'required_if:payment_type,recurrent',
