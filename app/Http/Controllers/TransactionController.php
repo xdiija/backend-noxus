@@ -152,6 +152,7 @@ class TransactionController extends Controller
             $transaction = $this->transactionModel->create([
                 'description' => $data['description'],
                 'category_id' => $data['category_id'],
+                'customer_id' => $data['customer_id'],
                 'payment_type' => $data['payment_type'],
                 'payment_count' => $paymentCount,
             ]);
@@ -207,9 +208,6 @@ class TransactionController extends Controller
             $fromAccount = Account::lockForUpdate()->findOrFail($validated['from_account_id']);
             $toAccount = Account::lockForUpdate()->findOrFail($validated['to_account_id']);
             $transferCategory = TransactionCategory::where('type', 'transfer')->first();
-
-
-            var_dump($transferCategory);
 
             $transaction = Transaction::create([
                 'description' => $validated['description'] ?? "Transfer from {$fromAccount->name} to {$toAccount->name}",

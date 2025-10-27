@@ -15,6 +15,7 @@ class Transaction extends Model
     protected $fillable = [
         'description',
         'category_id',
+        'customer_id',
         'payment_type',
         'payment_count'
     ];
@@ -27,5 +28,15 @@ class Transaction extends Model
     public function payments()
     {
         return $this->hasMany(Payment::class, 'transaction_id');
+    }
+
+    public function customer()
+    {
+        return $this->belongsTo(Customer::class, 'customer_id');
+    }
+
+    public function supplier()
+    {
+        return $this->belongsTo(Supplier::class, 'supplier_id');
     }
 }
