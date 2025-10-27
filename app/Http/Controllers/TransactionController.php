@@ -152,7 +152,8 @@ class TransactionController extends Controller
             $transaction = $this->transactionModel->create([
                 'description' => $data['description'],
                 'category_id' => $data['category_id'],
-                'customer_id' => $data['customer_id'],
+                'customer_id' => $data['customer_id'] ?? null,
+                'supplier_id' => $data['supplier_id'] ?? null,
                 'payment_type' => $data['payment_type'],
                 'payment_count' => $paymentCount,
             ]);

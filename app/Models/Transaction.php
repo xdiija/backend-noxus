@@ -16,6 +16,7 @@ class Transaction extends Model
         'description',
         'category_id',
         'customer_id',
+        'supplier_id',
         'payment_type',
         'payment_count'
     ];
