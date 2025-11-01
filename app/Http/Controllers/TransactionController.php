@@ -154,6 +154,7 @@ class TransactionController extends Controller
                 'category_id' => $data['category_id'],
                 'customer_id' => $data['customer_id'] ?? null,
                 'supplier_id' => $data['supplier_id'] ?? null,
+                'cost_center_id' => $data['cost_center_id'] ?? null,
                 'payment_type' => $data['payment_type'],
                 'payment_count' => $paymentCount,
             ]);

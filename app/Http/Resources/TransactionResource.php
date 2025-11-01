@@ -24,6 +24,10 @@ class TransactionResource extends JsonResource
                 'id' => $this->customer?->id,
                 'name' => $this->customer?->name,
             ] : null,
+            'cost_center' => $this->costCenter ? [
+                'id' => $this->costCenter?->id,
+                'name' => $this->costCenter?->name,
+            ] : null,
             'supplier' => $this->supplier ? [
                 'id' => $this->supplier?->id,
                 'name' => $this->supplier?->name,

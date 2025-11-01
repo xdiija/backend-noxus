@@ -140,6 +140,16 @@ class MenusTableSeeder extends Seeder
                 'status' => 1,
                 'exclusive_noxus' => 0
             ],
+            [
+                //id: 13
+                'name' => 'Centros de Custo',
+                'route' => '/cost-centers',
+                'icon' => 'account_tree',
+                'parent_id' => 7,
+                'order' => 4,
+                'status' => 1,
+                'exclusive_noxus' => 0
+            ],
         ];
 
         foreach ($menus as $menu) {
