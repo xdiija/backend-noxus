@@ -16,6 +16,7 @@ class Transaction extends Model
         'description',
         'category_id',
         'customer_id',
+        'cost_center_id',
         'supplier_id',
         'payment_type',
         'payment_count'
@@ -39,5 +40,10 @@ class Transaction extends Model
     public function supplier()
     {
         return $this->belongsTo(Supplier::class, 'supplier_id');
+    }
+
+    public function costCenter()
+    {
+        return $this->belongsTo(CostCenter::class, 'cost_center_id');
     }
 }

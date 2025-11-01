@@ -19,6 +19,7 @@ class TransactionStoreUpdateRequest extends FormRequest
             'category_id' => ['required', 'exists:transaction_categories,id'],
             'customer_id' => [ 'required_if:type,income', 'exists:customers,id'],
             'supplier_id' => [ 'required_if:type,expense', 'exists:suppliers,id'],
+            'cost_center_id' => [ 'required_if:type,expense', 'exists:cost_centers,id'],
             'payment_type' => ['required', Rule::in(['single', 'installment', 'recurrent'])],
             'interval' => [
                 'required_if:payment_type,recurrent',

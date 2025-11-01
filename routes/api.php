@@ -11,7 +11,7 @@ use App\Http\Controllers\{
     TransactionCategoryController,
     TransactionController,
     UserController,
-    PaymentController
+    CostCenterController
 };
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -118,4 +118,13 @@ Route::prefix('transactions')->middleware('auth')->controller(TransactionControl
     Route::put('/{id}/status', 'changeStatus')->middleware('check.permissions:Transações,update');
     Route::put('/payments/{id}/status', 'changePaymentStatus')->middleware('check.permissions:Transações,update');
     Route::delete('/{id}', 'destroy')->middleware('check.permissions:Transações,update');
+});
+
+Route::prefix('cost-centers')->middleware('auth')->controller(CostCenterController::class)->group(function () {
+    Route::get('/', 'index')->middleware('check.permissions:Centros de Custo,view');
+    Route::get('/{id}', 'show')->middleware('check.permissions:Centros de Custo,view');
+    Route::post('/', 'store')->middleware('check.permissions:Centros de Custo,create');
+    Route::put('/{id}', 'update')->middleware('check.permissions:Centros de Custo,update');
+    Route::put('/{id}/status', 'changeStatus')->middleware('check.permissions:Centros de Custo,update');
+    Route::delete('/{id}', 'destroy')->middleware('check.permissions:Centros de Custo,update');
 });
