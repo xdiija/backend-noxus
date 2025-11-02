@@ -321,14 +321,29 @@ class TransactionController extends Controller
     {
         $data = $request->validated();
 
+        $paymentCount = $data['payment_type'] != 'recurrent' ? count($data['payments']) : null;
+
+        $transaction = $this->transactionModel->with(
+            'payments.account', 'payments.transaction.category', 'category'
+        )->findOrFail($id);
+
+        if($request->type != $transaction->category->type){
+            return ['error'];
+        }
+
         try {
+
             DB::beginTransaction();
             
-            $transaction = $this->transactionModel->with(
-                'payments.account', 'payments.transaction.category'
-            )->findOrFail($id);
-
-            $transaction->update([ 'description' => $data['description']]);
+            $transaction->update([
+                'description' => $data['description'],
+                'category_id' => $data['category_id'],
+                'customer_id' => $data['customer_id'] ?? null,
+                'supplier_id' => $data['supplier_id'] ?? null,
+                'cost_center_id' => $data['cost_center_id'] ?? null,
+                'payment_type' => $data['payment_type'],
+                'payment_count' => $paymentCount,
+            ]);
 
             $this->handleUpdatePayments($transaction, $data['payments']);
 
@@ -345,6 +360,11 @@ class TransactionController extends Controller
             DB::rollBack();
             return response()->json(['error' => $th->getMessage()], 500);
         }
+    }
+
+    public function updateRecurrent(TransactionStoreUpdateRequest $request, $id)
+    {
+        $data = $request->validated();
     }
 
     private function handleUpdatePayments(Transaction $transaction, array $newPayments): void
@@ -421,7 +441,7 @@ class TransactionController extends Controller
 
     private function getAccountForUpdate(Payment $existingPayment, int $newPaymentAccountId): Account
     {
-        return $existingPayment->account->id === $newPaymentAccountId 
+        return $existingPayment->account?->id === $newPaymentAccountId 
             ? $existingPayment->account 
             : $this->accountModel->findOrFail($newPaymentAccountId);
     }
