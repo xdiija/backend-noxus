@@ -20,14 +20,7 @@ class TransactionStoreUpdateRequest extends FormRequest
             'customer_id' => [ 'required_if:type,income', 'exists:customers,id'],
             'supplier_id' => [ 'required_if:type,expense', 'exists:suppliers,id'],
             'cost_center_id' => [ 'required_if:type,expense', 'exists:cost_centers,id'],
-            'payment_type' => ['required', Rule::in(['single', 'installment', 'recurrent'])],
-            'interval' => [
-                'required_if:payment_type,recurrent',
-                Rule::in(['weekly', 'monthly', 'yearly']),
-            ],
-            'start_date' => ['required_if:payment_type,recurrent', 'date'],
-            'next_date' => ['required_if:payment_type,recurrent', 'date', 'after_or_equal:start_date'],
-            'total_amount' => ['required_if:payment_type,recurrent', 'numeric', 'min:0.01'],
+            'payment_type' => ['required', Rule::in(['single', 'installment'])],
             'payments' => ['required', 'array'],
             'payments.*.id' => ['nullable', 'exists:payments,id'],
             'payments.*.payment_number' => ['nullable', 'integer'],
@@ -57,7 +50,7 @@ class TransactionStoreUpdateRequest extends FormRequest
             'category_id.exists' => 'A categoria selecionada é inválida.',
 
             'payment_type.required' => 'O tipo de pagamento é obrigatório.',
-            'payment_type.in' => 'O tipo de pagamento deve ser um dos seguintes valores: single, installment ou recurrent.',
+            'payment_type.in' => 'O tipo de pagamento deve ser um dos seguintes valores: single ou installment.',
 
             'interval.required_if' => 'O intervalo é obrigatório para pagamentos recorrentes.',
             'interval.in' => 'O intervalo deve ser um dos seguintes valores: weekly, monthly ou yearly',
@@ -108,3 +101,4 @@ class TransactionStoreUpdateRequest extends FormRequest
         ];
     }
 }
+

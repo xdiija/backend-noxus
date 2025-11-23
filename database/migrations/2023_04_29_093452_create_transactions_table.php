@@ -15,7 +15,7 @@ return new class extends Migration
             $table->unsignedBigInteger('customer_id')->nullable();
             $table->unsignedBigInteger('supplier_id')->nullable();
             $table->unsignedBigInteger('cost_center_id')->nullable();
-            $table->enum('payment_type', ['single', 'installment', 'recurrent']);
+            $table->enum('payment_type', ['single', 'installment']);
             $table->integer('payment_count')->nullable();
             $table->softDeletes();
             $table->timestamps();

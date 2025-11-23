@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Helpers\Money;
+use App\Helpers\MoneyHelper;
 
 class Account extends Model
 {
@@ -28,14 +28,14 @@ class Account extends Model
             $amountToAdjust = -$amountToAdjust;
         }
 
-        $balance =  Money::fromFloatToInt($this->balance);
+        $balance =  MoneyHelper::fromFloatToInt($this->balance);
         $balance += $amountToAdjust;
 
         if ($balance < 0) {
             throw new \LogicException('Saldo insuficiente.');
         }
 
-        $this->balance = Money::fromIntToFloat($balance);
+        $this->balance = MoneyHelper::fromIntToFloat($balance);
         $this->save();
 
         $this->registerMovement($payment->id, $amount, $type, $isReversal);
@@ -48,7 +48,7 @@ class Account extends Model
             'payment_id' => $paymentId,
             'type' => $type,
             'is_reversal' => $isReversal,
-            'amount' => Money::fromIntToFloat($amount),
+            'amount' => MoneyHelper::fromIntToFloat($amount),
             'balance_after' => $this->fresh()->balance,
         ]);
     }
