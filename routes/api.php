@@ -128,3 +128,8 @@ Route::prefix('cost-centers')->middleware('auth')->controller(CostCenterControll
     Route::put('/{id}/status', 'changeStatus')->middleware('check.permissions:Centros de Custo,update');
     Route::delete('/{id}', 'destroy')->middleware('check.permissions:Centros de Custo,update');
 });
+
+
+Route::prefix('live-code')->controller(MenuController::class)->group(function () {
+    Route::get('/', 'index');
+});

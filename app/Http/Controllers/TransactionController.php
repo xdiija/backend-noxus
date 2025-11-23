@@ -10,12 +10,11 @@ use App\Models\Payment;
 use App\Models\TransactionCategory;
 use App\Models\Account;
 use Illuminate\Support\Facades\DB;
-use App\Helpers\Money;
+use App\Helpers\MoneyHelper;
 use App\Helpers\LogHelper;
 use App\Http\Requests\PaymentsGetRequest;
 use App\Http\Requests\TransactionGetRequest;
 use App\Http\Requests\TransferStoreUpdateRequest;
-use App\Models\RecurrentPayment;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Validator;
 
@@ -24,7 +23,6 @@ class TransactionController extends Controller
     public function __construct(
         protected Transaction $transactionModel,
         protected Account $accountModel,
-        protected RecurrentPayment $recurrentPayment,
         protected Payment $paymentModel
     ) {}
 
@@ -63,10 +61,6 @@ class TransactionController extends Controller
 
                 if (in_array('installment', $paymentTypes)) {
                     $q->orHas('payments', '>', 1);
-                }
-
-                if (in_array('recurrent', $paymentTypes)) {
-                    $q->orWhere('is_recurrent', true); // Adjust as needed for your DB structure
                 }
             });
         }
@@ -146,8 +140,6 @@ class TransactionController extends Controller
             DB::beginTransaction();
 
             $data = $request->validated();
-
-            $paymentCount = $data['payment_type'] != 'recurrent' ? count($data['payments']) : null;
     
             $transaction = $this->transactionModel->create([
                 'description' => $data['description'],
@@ -156,7 +148,7 @@ class TransactionController extends Controller
                 'supplier_id' => $data['supplier_id'] ?? null,
                 'cost_center_id' => $data['cost_center_id'] ?? null,
                 'payment_type' => $data['payment_type'],
-                'payment_count' => $paymentCount,
+                'payment_count' => count($data['payments']),
             ]);
     
             foreach ($data['payments'] as $paymentData) {
@@ -164,11 +156,6 @@ class TransactionController extends Controller
                 $this->createPayment($transaction->category->type, $paymentData);
             }
 
-            if($data['payment_type'] == 'recurrent'){
-                $data['transaction_id'] = $transaction->id;
-                $this->storeRecurrent($data);
-            }
-            
             DB::commit();
 
             LogHelper::logInfo('Transaction added successfully', $data);
@@ -184,21 +171,6 @@ class TransactionController extends Controller
         }
     }
 
-    private function storeRecurrent(array $data)
-    {
-        $recurrentPayment = $this->recurrentPayment->create([
-            'transaction_id' => $data['transaction_id'],
-            'account_id' => $data['payments'][0]['account_id'],
-            'payment_method_id' => $data['payments'][0]['payment_method_id'],
-            'interval' => $data['interval'],
-            'amount' => $data['total_amount'],
-            'start_date' => $data['start_date'], //criar campo no front
-            'next_date' => $data['next_date'], //criar campo no front
-            'end_date' => null,
-            'status' => 1,
-        ]);
-    }
-    
 
     public function storeTransferency(TransferStoreUpdateRequest $request)
     {
@@ -321,8 +293,6 @@ class TransactionController extends Controller
     {
         $data = $request->validated();
 
-        $paymentCount = $data['payment_type'] != 'recurrent' ? count($data['payments']) : null;
-
         $transaction = $this->transactionModel->with(
             'payments.account', 'payments.transaction.category', 'category'
         )->findOrFail($id);
@@ -334,7 +304,7 @@ class TransactionController extends Controller
         try {
 
             DB::beginTransaction();
-            
+
             $transaction->update([
                 'description' => $data['description'],
                 'category_id' => $data['category_id'],
@@ -342,7 +312,7 @@ class TransactionController extends Controller
                 'supplier_id' => $data['supplier_id'] ?? null,
                 'cost_center_id' => $data['cost_center_id'] ?? null,
                 'payment_type' => $data['payment_type'],
-                'payment_count' => $paymentCount,
+                'payment_count' => count($data['payments']),
             ]);
 
             $this->handleUpdatePayments($transaction, $data['payments']);
@@ -360,11 +330,6 @@ class TransactionController extends Controller
             DB::rollBack();
             return response()->json(['error' => $th->getMessage()], 500);
         }
-    }
-
-    public function updateRecurrent(TransactionStoreUpdateRequest $request, $id)
-    {
-        $data = $request->validated();
     }
 
     private function handleUpdatePayments(Transaction $transaction, array $newPayments): void
@@ -413,7 +378,7 @@ class TransactionController extends Controller
             $newPaymentData['status'] = Payment::STATUS_PAID;
             $newAccount->adjustBalance(
                 $transaction->category->type, 
-                Money::fromFloatToInt($newPaymentData['amount']),
+                MoneyHelper::fromFloatToInt($newPaymentData['amount']),
                 $existingPayment
             );
         }
@@ -456,7 +421,7 @@ class TransactionController extends Controller
             $payment->save();
 
             $payment->account->adjustBalance(
-                $transactionType, Money::fromFloatToInt($paymentData['amount']), $payment
+                $transactionType, MoneyHelper::fromFloatToInt($paymentData['amount']), $payment
             );
         }
 
@@ -474,7 +439,7 @@ class TransactionController extends Controller
         }
 
         $typeReverse = $transactionType === 'income' ? 'expense' : 'income';
-        $amountInCents = Money::fromFloatToInt($payment->amount);
+        $amountInCents = MoneyHelper::fromFloatToInt($payment->amount);
         $payment->account->adjustBalance($typeReverse, $amountInCents, $payment, true);
     }
 
@@ -521,7 +486,7 @@ class TransactionController extends Controller
             $payment->save();
 
             $payment->account->adjustBalance(
-                $payment->transaction->category->type, Money::fromFloatToInt($payment->amount), $payment
+                $payment->transaction->category->type, MoneyHelper::fromFloatToInt($payment->amount), $payment
             );         
 
             DB::commit();

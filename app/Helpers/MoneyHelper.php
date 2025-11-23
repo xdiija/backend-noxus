@@ -2,7 +2,7 @@
 
 namespace App\Helpers;
 
-class Money
+class MoneyHelper
 {
     /**
      * Convert cents (int) to reais (float)
