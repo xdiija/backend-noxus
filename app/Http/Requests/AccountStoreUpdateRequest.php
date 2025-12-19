@@ -4,6 +4,8 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use App\Rules\PhoneRule;
+use App\Helpers\PhoneHelper;
 
 class AccountStoreUpdateRequest extends FormRequest
 {
@@ -25,8 +27,23 @@ class AccountStoreUpdateRequest extends FormRequest
                 'required',
                 Rule::in(['bank', 'cash', 'credit_card'])
             ],
-            'balance' => [
+
+            'agency' => [
                 'nullable',
+                'min:3',
+                'max:15',
+            ],
+            'number' => [
+                'nullable',
+                'min:3',
+                'max:20',
+            ],
+            'phone' => [
+                'nullable',
+                new PhoneRule
+            ],
+
+            'balance' => [
                 'numeric',
                 'min:0'
             ],
@@ -37,6 +54,13 @@ class AccountStoreUpdateRequest extends FormRequest
             ],
         ];
     }
+
+    protected function prepareForValidation(): void
+    {
+        $this->merge([
+            'phone' => PhoneHelper::sanitize($this->phone),
+        ]);
+    }    
 
     public function messages(): array
     {

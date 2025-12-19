@@ -19,6 +19,9 @@ class AccountsTableSeeder extends Seeder
             [
                 'name' => 'Bradesco 1',
                 'type' => 'bank',
+                'agency' => '1233',
+                'number' => '5362665',
+                'phone' => '4733763166',
                 'balance' => 1000,
                 'status' => 1
             ],
