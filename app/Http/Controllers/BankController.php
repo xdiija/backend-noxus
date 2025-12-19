@@ -43,6 +43,14 @@ class BankController extends Controller
         return new BankResource($bank);
     }
 
+    public function changeStatus(string $id)
+    {   
+        $bank = $this->bankModel->findOrFail($id);
+        $bank->status = $bank->status === 1 ? 2 : 1;
+        $bank->save();
+        return new BankResource($bank);
+    }
+
     public function destroy($id)
     {
         $bank = $this->bankModel->findOrFail($id);

@@ -150,6 +150,16 @@ class MenusTableSeeder extends Seeder
                 'status' => 1,
                 'exclusive_noxus' => 0
             ],
+            [
+                //id: 14
+                'name' => 'Bancos',
+                'route' => '/banks',
+                'icon' => 'account_balance',
+                'parent_id' => 7,
+                'order' => 4,
+                'status' => 1,
+                'exclusive_noxus' => 0
+            ],
         ];
 
         foreach ($menus as $menu) {

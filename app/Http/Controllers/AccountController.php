@@ -43,6 +43,14 @@ class AccountController extends Controller
         return new AccountResource($account);
     }
 
+    public function changeStatus(string $id)
+    {   
+        $account = $this->accountModel->findOrFail($id);
+        $account->status = $account->status === 1 ? 2 : 1;
+        $account->save();
+        return new AccountResource($account);
+    }
+
     public function destroy($id)
     {
         $account = $this->accountModel->findOrFail($id);

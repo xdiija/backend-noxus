@@ -52,20 +52,6 @@ class TransactionStoreUpdateRequest extends FormRequest
             'payment_type.required' => 'O tipo de pagamento é obrigatório.',
             'payment_type.in' => 'O tipo de pagamento deve ser um dos seguintes valores: single ou installment.',
 
-            'interval.required_if' => 'O intervalo é obrigatório para pagamentos recorrentes.',
-            'interval.in' => 'O intervalo deve ser um dos seguintes valores: weekly, monthly ou yearly',
-
-            'start_date.required_if' => 'A data inicial é obrigatória para pagamentos recorrentes.',
-            'start_date.date' => 'A data inicial deve ser uma data válida.',
-
-            'next_date.required_if' => 'A próxima data é obrigatória para pagamentos recorrentes.',
-            'next_date.date' => 'A próxima data deve ser uma data válida.',
-            'next_date.after_or_equal' => 'A próxima data deve ser igual ou posterior à data inicial.',
-
-            'total_amount.required_if' => 'O valor total é obrigatório para pagamentos recorrentes.',
-            'total_amount.numeric' => 'O valor total deve ser numérico.',
-            'total_amount.min' => 'O valor total deve ser de pelo menos 0,01.',
-
             'payments.required' => 'É necessário informar pelo menos um pagamento.',
             'payments.array' => 'O formato dos pagamentos é inválido.',
 

@@ -3,6 +3,7 @@
 use App\Http\Controllers\{
     AccountController,
     AuthController,
+    BankController,
     CustomerController,
     SupplierController,
     MenuController,
@@ -88,6 +89,15 @@ Route::prefix('accounts')->middleware('auth')->controller(AccountController::cla
     Route::post('/', 'store')->middleware('check.permissions:Contas,create');
     Route::put('/{id}/status', 'changeStatus')->middleware('check.permissions:Contas,update');
     Route::delete('/{id}', 'destroy')->middleware('check.permissions:Contas,update');
+});
+
+Route::prefix('banks')->middleware('auth')->controller(BankController::class)->group(function () {
+    Route::get('/', 'index')->middleware('check.permissions:Bancos,view');
+    Route::get('/{id}', 'show')->middleware('check.permissions:Bancos,view');
+    Route::put('/{id}', 'update')->middleware('check.permissions:Bancos,update');
+    Route::post('/', 'store')->middleware('check.permissions:Bancos,create');
+    Route::put('/{id}/status', 'changeStatus')->middleware('check.permissions:Bancos,update');
+    Route::delete('/{id}', 'destroy')->middleware('check.permissions:Bancos,update');
 });
 
 Route::prefix('transaction-categories')->middleware('auth')->controller(TransactionCategoryController::class)->group(function () {
