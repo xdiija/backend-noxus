@@ -11,11 +11,13 @@ return new class extends Migration
         Schema::create('accounts', function (Blueprint $table) {
             $table->id('id');
             $table->string('name');
+            $table->unsignedBigInteger('bank_id')->nullable();
             $table->string('agency')->nullable();
             $table->string('number')->nullable();
             $table->string('phone')->nullable();
             $table->enum('type', ['bank', 'cash']);
             $table->decimal('balance', 10, 2)->default(0);
+            $table->boolean('is_default')->default(0);
             $table->boolean('status')->default(1);
             $table->softDeletes();
             $table->timestamps();
