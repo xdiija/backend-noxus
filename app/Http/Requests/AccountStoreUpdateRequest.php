@@ -27,7 +27,11 @@ class AccountStoreUpdateRequest extends FormRequest
                 'required',
                 Rule::in(['bank', 'cash', 'credit_card'])
             ],
-
+            'bank_id' => [
+                'nullable',
+                'exists:banks,id',
+                Rule::requiredIf($this->type === 'bank'),
+            ],
             'agency' => [
                 'nullable',
                 'min:3',
@@ -42,7 +46,10 @@ class AccountStoreUpdateRequest extends FormRequest
                 'nullable',
                 new PhoneRule
             ],
-
+             'is_default' => [
+                'nullable',
+                'boolean',
+            ],
             'balance' => [
                 'numeric',
                 'min:0'
@@ -69,12 +76,23 @@ class AccountStoreUpdateRequest extends FormRequest
             'name.min' => 'O nome deve ter pelo menos 3 caracteres.',
             'name.unique' => 'O nome já está em uso.',
             'name.max' => 'O nome não pode ter mais de 255 caracteres.',
+
             'type.required' => 'O campo tipo é obrigatório.',
-            'type.in' => 'O tipo deve ser um dos seguintes valores: bank, cash ou credit_card.',
+            'type.in' => 'O tipo deve ser bank ou cash.',
+
+            'bank_id.exists' => 'O banco selecionado é inválido.',
+            'bank_id.required' => 'O banco é obrigatório para contas do tipo bank.',
+
+            'agency.required' => 'A agência é obrigatória para contas bancárias.',
+            'number.required' => 'O número da conta é obrigatório para contas bancárias.',
+
             'balance.numeric' => 'O campo saldo deve ser um número.',
-            'balance.min' => 'O campo saldo não pode ser negativo.',
+            'balance.min' => 'O saldo não pode ser negativo.',
+
             'status.required' => 'O campo status é obrigatório.',
             'status.boolean' => 'O campo status deve ser verdadeiro (1) ou falso (0).',
+
+            'is_default.boolean' => 'O campo padrão deve ser verdadeiro (1) ou falso (0).',
         ];
     }
 }

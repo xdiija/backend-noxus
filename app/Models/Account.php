@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Helpers\MoneyHelper;
+use Illuminate\Support\Facades\DB;
 
 class Account extends Model
 {
@@ -12,13 +13,37 @@ class Account extends Model
 
     protected $fillable = [
         'name',
-        'type',
+        'bank_id',
         'agency',
         'number',
         'phone',
+        'type',
         'balance',
-        'status'
+        'is_default',
+        'status',
     ];
+
+    protected static function booted()
+    {
+        static::saving(function ($account) {
+
+            if ($account->is_default) {
+
+                DB::transaction(function () use ($account) {
+
+                    static::where('id', '!=', $account->id)
+                        ->where('is_default', true)
+                        ->update(['is_default' => false]);
+
+                });
+            }
+        });
+    }
+
+    public function bank()
+    {
+        return $this->belongsTo(Bank::class);
+    }
 
     public function adjustBalance(string $type, int $amount, Payment $payment, bool $isReversal = false): void
     {
