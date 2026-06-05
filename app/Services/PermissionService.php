@@ -46,4 +46,9 @@ class PermissionService
         $userRoles = auth()->user()->roles->pluck('id');
         return $userRoles->contains(Role::ADMIN_ROLE);
     }
+
+    public static function isRegularUser(): bool
+    {
+        return !self::isNoxusUser() && !self::isAdminUser();
+    }
 }

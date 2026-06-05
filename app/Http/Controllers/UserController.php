@@ -2,13 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\UserStoreUpdateRequest;
+use App\DTOs\User\CreateUserDTO;
+use App\DTOs\User\UpdateUserDTO;
+use App\Exceptions\User\InvalidPasswordChangeException;
+use App\Http\Requests\User\ChangePasswordRequest;
+use App\Http\Requests\User\IndexUsersRequest;
+use App\Http\Requests\User\StoreUpdateUserRequestRequest;
 use App\Http\Resources\UserResource;
-use App\Models\User;
-use App\Services\PermissionService;
+use App\Services\UserService;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
 
 /**
  * @OA\Info(title="Documentação Noxus API", version="1.0")
@@ -16,120 +18,63 @@ use Illuminate\Support\Facades\Hash;
 class UserController extends Controller
 {   
     public function __construct(
-        protected User $model,
-        protected PermissionService $permissionService
+        protected UserService $userService
     ) {}
 
-    public function index()
+    public function index(IndexUsersRequest $request)
     {
-        $perPage = request()->get('per_page', 10); 
-        $filter = request()->get('filter', ''); 
-        $query = $this->model->with('roles');
-        
-        if (!empty($filter)) {
-            $query->where('name', 'like', "%{$filter}%");
-        }
-
-        if (!PermissionService::isNoxusUser() && !PermissionService::isAdminUser()) {
-            $query->whereDoesntHave('roles', function ($roleQuery) {
-                $roleQuery->whereIn('roles.id', [1, 2]);
-            });
-        } else if (!PermissionService::isNoxusUser() && PermissionService::isAdminUser()) {
-            $query->whereDoesntHave('roles', function ($roleQuery) {
-                $roleQuery->where('roles.id', 1);
-            });
-        }
-
         return UserResource::collection(
-            $query->paginate($perPage)
+            $this->userService->list(
+                $request->input('per_page'), $request->input('filter')
+            )
         );
     }
 
-    public function store(UserStoreUpdateRequest $request)
-    {   
-        $data = $request->validated();
-        $data['password'] = bcrypt($request->password);
-
-        $user = User::create($data);
-        $user->roles()->sync($request->roles);
-        return new UserResource($user);
+    public function store(StoreUpdateUserRequestRequest $request)
+    {        
+        return new UserResource(
+            $this->userService->create(CreateUserDTO::fromRequest($request))
+        );
     }
 
     public function show(string $id)
-    {   
-        $query = $this->model->with('roles');
-
-        if (!PermissionService::isNoxusUser() && !PermissionService::isAdminUser()) {
-            $query->whereDoesntHave('roles', function ($roleQuery) {
-                $roleQuery->whereIn('roles.id', [1, 2]);
-            });
-        } elseif (!PermissionService::isNoxusUser() && PermissionService::isAdminUser()) {
-            $query->whereDoesntHave('roles', function ($roleQuery) {
-                $roleQuery->where('roles.id', 1);
-            });
-        }
-
+    {
         try {
-            $user = $query->findOrFail($id);
-            return new UserResource($user);
+            return new UserResource($this->userService->find($id));
         } catch (ModelNotFoundException $e) {
             return response()->json(['message' => 'Usuário não encontrado ou inacessível.'], 404);
         }
     }
 
-    public function update(UserStoreUpdateRequest $request, string $id)
-    {   
-        $user = $this->model->findOrFail($id);
-        $data = $request->validated();
-        if($request->password) $data['password'] = bcrypt($request->password);
-        $user->update($data);
-        $user->roles()->sync($request->roles);
-        User::forgetUserPermissionsCache();
-        return new UserResource($user);
+    public function update(StoreUpdateUserRequestRequest $request, string $id)
+    {
+        return new UserResource(
+            $this->userService->update($id, UpdateUserDTO::fromRequest($request))
+        );
     }
 
     public function changeStatus(string $id)
-    {   
-        $user = $this->model->findOrFail($id);
-        $user->status = $user->status === 1 ? 2 : 1;
-        $user->save();
-        return new UserResource($user);
+    {
+        return new UserResource($this->userService->changeStatus($id));
     }
-     
-    public function changePassword(Request $request, string $id)
-    {   
-        if($id != auth()->user()->id){
+
+    public function changePassword(ChangePasswordRequest $request, string $id)
+    {
+        try {
+            return new UserResource(
+                $this->userService->changePassword($id, $request->validated())
+            );
+        } catch (InvalidPasswordChangeException $e) {
             return response()->json([
-                'errors' => [
-                    'id' => 'ID diferente do usuário logado!'
-                ]
+                'errors' => [$e->field => $e->getMessage()]
             ], 400);
         }
-
-        $user = $this->model->findOrFail($id);
-        $data = $request->validate([
-            'old_password' => 'required',
-            'new_password' => 'required',
-        ]);
-
-        if(!Hash::check($data['old_password'], $user->password)){
-            return response()->json([
-                'errors' => [
-                    'old_password' => 'Senha antiga incorreta!'
-                ]
-            ], 400);
-        }
-
-        $user->update(['password' => bcrypt($data['new_password'])]);
-        $user->save();
-        return new UserResource($user);
     }
 
     public function destroy(string $id)
     {
-        $user = $this->model->findOrFail($id);
-        $user->roles()->detach();
-        $user->delete();
+        $this->userService->delete($id);
+
         return response()->noContent();
     }
 }
