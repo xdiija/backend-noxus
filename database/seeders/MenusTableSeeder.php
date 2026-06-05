@@ -72,66 +72,6 @@ class MenusTableSeeder extends Seeder
             ],
             [
                 //id: 7
-                'name' => 'Financeiro',
-                'icon' => 'attach_money',
-                'route' => null,
-                'parent_id' => null,
-                'order' => 1,
-                'status' => 1,
-                'exclusive_noxus' => 0
-            ],
-            [
-                //id: 8
-                'name' => 'Contas',
-                'route' => '/accounts',
-                'icon' => 'account_balance_wallet',
-                'parent_id' => 7,
-                'order' => 3,
-                'status' => 1,
-                'exclusive_noxus' => 0
-            ],
-            [
-                //id: 9
-                'name' => 'Categorias de Movimentações',
-                'route' => '/transaction-categories',
-                'icon' => 'category',
-                'parent_id' => 7,
-                'order' => 3,
-                'status' => 1,
-                'exclusive_noxus' => 0
-            ],
-            [
-                //id: 10
-                'name' => 'Transações',
-                'route' => '/transactions',
-                'icon' => 'point_of_sale',
-                'parent_id' => 7,
-                'order' => 1,
-                'status' => 1,
-                'exclusive_noxus' => 0
-            ],
-            [
-                //id: 11
-                'name' => 'Lançamentos',
-                'route' => '/payments',
-                'icon' => 'payments',
-                'parent_id' => 7,
-                'order' => 2,
-                'status' => 1,
-                'exclusive_noxus' => 0
-            ],
-            [
-                //id: 12
-                'name' => 'Métodos de Pagamento',
-                'route' => '/payment-methods',
-                'icon' => 'credit_card',
-                'parent_id' => 7,
-                'order' => 3,
-                'status' => 1,
-                'exclusive_noxus' => 0
-            ],
-            [
-                //id: 13
                 'name' => 'Fornecedores',
                 'route' => '/suppliers',
                 'icon' => 'person_4',
@@ -139,27 +79,7 @@ class MenusTableSeeder extends Seeder
                 'order' => 3,
                 'status' => 1,
                 'exclusive_noxus' => 0
-            ],
-            [
-                //id: 13
-                'name' => 'Centros de Custo',
-                'route' => '/cost-centers',
-                'icon' => 'account_tree',
-                'parent_id' => 7,
-                'order' => 4,
-                'status' => 1,
-                'exclusive_noxus' => 0
-            ],
-            [
-                //id: 14
-                'name' => 'Bancos',
-                'route' => '/banks',
-                'icon' => 'account_balance',
-                'parent_id' => 7,
-                'order' => 4,
-                'status' => 1,
-                'exclusive_noxus' => 0
-            ],
+            ]
         ];
 
         foreach ($menus as $menu) {
