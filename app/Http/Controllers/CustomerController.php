@@ -2,69 +2,57 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\CustomerStoreUpdateRequest;
+use App\DTOs\Customer\CustomerDTO;
+use App\Http\Requests\Customer\StoreUpdateCustomerRequest;
+use App\Http\Requests\Customer\IndexCustomersRequest;
 use App\Http\Resources\CustomerResource;
-use App\Models\Customer;
+use App\Services\CustomerService;
 
 class CustomerController extends Controller
 {
-
     public function __construct(
-        protected Customer $customerModel
-    ){}
+        protected CustomerService $customerService
+    ) {}
 
-    public function index()
+    public function index(IndexCustomersRequest $request)
     {
-        $perPage = request()->get('per_page', 10); 
-        $filter = request()->get('filter', ''); 
-        $query = $this->customerModel->query();
-        
-        if (!empty($filter)) {
-            $query->where('name', 'like', "%{$filter}%");
-        }
-
         return CustomerResource::collection(
-            $query->paginate($perPage)
+            $this->customerService->list(
+                $request->input('per_page'), $request->input('filter')
+            )
         );
     }
 
-    public function store(CustomerStoreUpdateRequest $request)
-    {
-        $customer = $this->customerModel->create($request->validated());
-        return new CustomerResource($customer);
-    }
-
-    public function show($id)
+    public function store(StoreUpdateCustomerRequest $request)
     {
         return new CustomerResource(
-            Customer::findOrFail($id)
+            $this->customerService->create(CustomerDTO::fromRequest($request))
         );
     }
 
-    public function update(CustomerStoreUpdateRequest $request, $id)
+    public function show(string $id)
     {
-        $data = $request->validated();
-        $customer = $this->customerModel->findOrFail($id);
-        $customer->update($data);
-
-        return new CustomerResource($customer);
+        return new CustomerResource($this->customerService->find($id));
     }
 
-    public function destroy($id)
+    public function update(StoreUpdateCustomerRequest $request, string $id)
     {
-        $customer = $this->customerModel->findOrFail($id);
-        $customer->delete();
-        return response()->noContent();
+        return new CustomerResource(
+            $this->customerService->update($id, CustomerDTO::fromRequest($request))
+        );
     }
 
-    public function changeStatus($id)
+    public function changeStatus(string $id)
     {
-        $customer = Customer::findOrFail($id);
-        $customer->status = $customer->status == 1 ? 2 : 1;
-        $customer->save();
+        $this->customerService->changeStatus($id);
 
         return response()->json(['message' => 'Status atualizado com sucesso']);
     }
 
+    public function destroy(string $id)
+    {
+        $this->customerService->delete($id);
 
+        return response()->noContent();
+    }
 }

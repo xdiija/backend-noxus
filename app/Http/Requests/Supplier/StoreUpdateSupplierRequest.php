@@ -1,13 +1,13 @@
 <?php
 
-namespace App\Http\Requests;
+namespace App\Http\Requests\Supplier;
 
 use App\Helpers\PhoneHelper;
 use App\Rules\PhoneRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-class SupplierStoreUpdateRequest extends FormRequest
+class StoreUpdateSupplierRequest extends FormRequest
 {
     public function authorize(): bool
     {

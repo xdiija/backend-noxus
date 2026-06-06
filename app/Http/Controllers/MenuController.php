@@ -129,7 +129,9 @@ class MenuController extends Controller
     public function changeStatus(string $id)
     {   
         $menu = $this->menuModel->findOrFail($id);
-        $menu->status = $menu->status === Status::ACTIVE->value ? Status::INACTIVE->value : Status::ACTIVE->value;
+        $menu->status = $menu->status === Status::ACTIVE->value 
+            ? Status::INACTIVE->value 
+            : Status::ACTIVE->value;
         $menu->save();
         return new MenuResource($menu);
     }

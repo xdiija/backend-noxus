@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Requests;
+namespace App\Http\Requests\Customer;
 
 use App\Helpers\PhoneHelper;
 use App\Helpers\CpfHelper;
@@ -9,7 +9,7 @@ use App\Rules\CpfRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-class CustomerStoreUpdateRequest extends FormRequest
+class StoreUpdateCustomerRequest extends FormRequest
 {
     public function authorize(): bool
     {

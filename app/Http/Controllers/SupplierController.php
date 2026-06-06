@@ -2,68 +2,57 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\SupplierStoreUpdateRequest;
+use App\DTOs\Supplier\SupplierDTO;
+use App\Http\Requests\Supplier\IndexSuppliersRequest;
+use App\Http\Requests\Supplier\StoreUpdateSupplierRequest;
 use App\Http\Resources\SupplierResource;
-use App\Models\Supplier;
+use App\Services\SupplierService;
 
 class SupplierController extends Controller
 {
     public function __construct(
-        protected Supplier $supplierModel
+        protected SupplierService $supplierService
     ) {}
 
-    public function index()
+    public function index(IndexSuppliersRequest $request)
     {
-        $perPage = request()->get('per_page', 10);
-        $filter = request()->get('filter', '');
-
-        $query = $this->supplierModel->query();
-
-        if (!empty($filter)) {
-            $query->where('nome_fantasia', 'like', "%{$filter}%")
-                  ->orWhere('razao_social', 'like', "%{$filter}%")
-                  ->orWhere('cnpj', 'like', "%{$filter}%");
-        }
-
         return SupplierResource::collection(
-            $query->paginate($perPage)
+            $this->supplierService->list(
+                $request->input('per_page'), $request->input('filter')
+            )
         );
     }
 
-    public function store(SupplierStoreUpdateRequest $request)
-    {
-        $supplier = $this->supplierModel->create($request->validated());
-        return new SupplierResource($supplier);
-    }
-
-    public function show($id)
+    public function store(StoreUpdateSupplierRequest $request)
     {
         return new SupplierResource(
-            $this->supplierModel->findOrFail($id)
+            $this->supplierService->create(SupplierDTO::fromRequest($request))
         );
     }
 
-    public function update(SupplierStoreUpdateRequest $request, $id)
+    public function show(string $id)
     {
-        $supplier = $this->supplierModel->findOrFail($id);
-        $supplier->update($request->validated());
-
-        return new SupplierResource($supplier);
+        return new SupplierResource($this->supplierService->find($id));
     }
 
-    public function destroy($id)
+    public function update(StoreUpdateSupplierRequest $request, string $id)
     {
-        $supplier = $this->supplierModel->findOrFail($id);
-        $supplier->delete();
-        return response()->noContent();
+        return new SupplierResource(
+            $this->supplierService->update($id, SupplierDTO::fromRequest($request))
+        );
     }
 
-    public function changeStatus($id)
+    public function changeStatus(string $id)
     {
-        $supplier = $this->supplierModel->findOrFail($id);
-        $supplier->status = $supplier->status == 1 ? 0 : 1;
-        $supplier->save();
+        $this->supplierService->changeStatus($id);
 
         return response()->json(['message' => 'Status atualizado com sucesso']);
+    }
+
+    public function destroy(string $id)
+    {
+        $this->supplierService->delete($id);
+
+        return response()->noContent();
     }
 }
