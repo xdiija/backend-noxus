@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Helpers\StatusHelper;
+use App\Enums\Status;
 use App\Http\Requests\RoleStoreUpdateRequest;
 use App\Http\Resources\RoleResource;
 use App\Models\Menu;
@@ -23,7 +23,7 @@ class RoleController extends Controller
         $query = $this->roleModel;
         
         if ($isActive) {
-            $query = $query->where('status', StatusHelper::ACTIVE);
+            $query = $query->where('status', Status::ACTIVE->value);
         }
     
         if (PermissionService::isNoxusUser()) {
@@ -54,7 +54,7 @@ class RoleController extends Controller
         $data = $request->validated();
         $role = $this->roleModel->create([
             'name' => $data["name"],
-            'status' => $data['status'] ?? 1
+            'status' => $data['status'] ?? Status::ACTIVE->value
         ]);
         $permissions = $this->permissionService->preparePermissions(
             $data['permissions'], $this->menuModel, 'menu_id'
@@ -103,7 +103,7 @@ class RoleController extends Controller
     public function changeStatus(string $id)
     {   
         $role = $this->roleModel->findOrFail($id);
-        $role->status = $role->status === 1 ? 2 : 1;
+        $role->status = $role->status === Status::ACTIVE->value ? Status::INACTIVE->value : Status::ACTIVE->value;
         $role->save();
         return new RoleResource($role);
     }

@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Helpers\StatusHelper;
+use App\Enums\Status;
 use App\Http\Requests\MenuStoreUpdateRequest;
 use App\Http\Resources\MenuResource;
 use App\Models\Menu;
@@ -26,17 +26,17 @@ class MenuController extends Controller
                     $query
                         ->whereIn('role_id', $userRoles)
                         ->where('can_view', true)
-                        ->where('status', StatusHelper::ACTIVE);
+                        ->where('status', Status::ACTIVE->value);
                 })
                 ->where('parent_id', null)
-                ->where('status', StatusHelper::ACTIVE) 
+                ->where('status', Status::ACTIVE->value) 
                 ->with(['children' => function ($query) use ($userRoles) {
                     $query
-                        ->where('status', StatusHelper::ACTIVE)
+                        ->where('status', Status::ACTIVE->value)
                         ->whereHas('roles', function ($query) use ($userRoles) {
                             $query->whereIn('role_id', $userRoles)
                             ->where('can_view', true)
-                            ->where('status', StatusHelper::ACTIVE)
+                            ->where('status', Status::ACTIVE->value)
                                 ->orderBy('order');
                         });
                 }])
@@ -46,9 +46,9 @@ class MenuController extends Controller
 
             $menus = $this->menuModel
                 ->where('parent_id', null)
-                ->where('status', StatusHelper::ACTIVE) 
+                ->where('status', Status::ACTIVE->value) 
                 ->with(['children' => function ($query) {
-                    $query->where('status', StatusHelper::ACTIVE)
+                    $query->where('status', Status::ACTIVE->value)
                         ->orderBy('order');
                 }])
                 ->orderBy('order')->get();
@@ -64,9 +64,9 @@ class MenuController extends Controller
         $userRoles = auth()->user()->roles->pluck('id');
         $menusQuery = $this->menuModel
             ->where('parent_id', null)
-            ->where('status', StatusHelper::ACTIVE) 
+            ->where('status', Status::ACTIVE->value) 
             ->with(['children' => function ($query) {
-                $query->where('status', StatusHelper::ACTIVE);
+                $query->where('status', Status::ACTIVE->value);
             }])
             ->orderBy('order');
         
@@ -92,7 +92,7 @@ class MenuController extends Controller
             'parent_id' => $data['parent_id'] ?? null,
             'exclusive_noxus' => $data['exclusive_noxus'],
             'order' => $data['order'] ?? 0,
-            'status' => $data['status'] ?? StatusHelper::ACTIVE
+            'status' => $data['status'] ?? Status::ACTIVE->value
         ]);
         return $menu;
     }
@@ -129,7 +129,7 @@ class MenuController extends Controller
     public function changeStatus(string $id)
     {   
         $menu = $this->menuModel->findOrFail($id);
-        $menu->status = $menu->status === 1 ? 2 : 1;
+        $menu->status = $menu->status === Status::ACTIVE->value ? Status::INACTIVE->value : Status::ACTIVE->value;
         $menu->save();
         return new MenuResource($menu);
     }

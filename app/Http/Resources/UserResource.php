@@ -2,8 +2,8 @@
 
 namespace App\Http\Resources;
 
-use App\Helpers\DatetHelper;
-use App\Helpers\StatusHelper;
+use App\Enums\Status;
+use App\Helpers\DateHelper;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -17,7 +17,7 @@ class UserResource extends JsonResource
             'email' => $this->email,
             'status' => [
                 'id' => $this->status,
-                'name' => StatusHelper::getStatusName($this->status),
+                'name' => Status::tryFrom($this->status)?->label(),
             ],
             'roles' => $this->roles->map(function ($role) {
                 return [
@@ -25,9 +25,9 @@ class UserResource extends JsonResource
                     'name' => $role->name,
                 ];
             }),
-            'last_login' => DatetHelper::toBR($this->last_login),
-            'updated_at' => DatetHelper::toBR($this->updated_at),
-            'created_at' => DatetHelper::toBR($this->created_at)
+            'last_login' => DateHelper::toBR($this->last_login),
+            'updated_at' => DateHelper::toBR($this->updated_at),
+            'created_at' => DateHelper::toBR($this->created_at)
         ];
     }
 }

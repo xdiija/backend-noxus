@@ -2,8 +2,8 @@
 
 namespace App\Http\Resources;
 
-use App\Helpers\DatetHelper;
-use App\Helpers\StatusHelper;
+use App\Enums\Status;
+use App\Helpers\DateHelper;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -23,11 +23,11 @@ class MenuResource extends JsonResource
             'order' => $this->order,
             'status' => [
                 'id' => $this->status,
-                'name' => StatusHelper::getStatusName($this->status),
+                'name' => Status::tryFrom($this->status)?->label(),
             ],
             'children' => MenuResource::collection($this->whenLoaded('children')),
-            'updated_at' => DatetHelper::toBR($this->updated_at),
-            'created_at' => DatetHelper::toBR($this->created_at)
+            'updated_at' => DateHelper::toBR($this->updated_at),
+            'created_at' => DateHelper::toBR($this->created_at)
         ];
 
         return $menuArray;

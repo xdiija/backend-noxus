@@ -4,7 +4,7 @@ namespace App\Helpers;
 
 use Carbon\Carbon;
 
-class DatetHelper
+class DateHelper
 {
     /**
      * Convert a database date or timestamp to BR format (dd/mm/yyyy or dd/mm/yyyy HH:mm:ss).
