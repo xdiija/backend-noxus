@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Controller;
-use App\Helpers\StatusHelper;
+use App\Enums\Status;
 
 class AuthController extends Controller
 {
@@ -33,7 +33,7 @@ class AuthController extends Controller
             return response()->json(['error' => 'Unauthorized'], 401);
         }
         
-        if(auth()->user()->status != StatusHelper::ACTIVE){
+        if(auth()->user()->status != Status::ACTIVE->value){
             return response()->json(['error' => 'Unauthorized'], 401);
         }
 
