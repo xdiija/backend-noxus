@@ -2,151 +2,60 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\Status;
-use App\Http\Requests\MenuStoreUpdateRequest;
+use App\DTOs\Menu\MenuDTO;
+use App\Http\Requests\Menu\StoreUpdateMenuRequest;
 use App\Http\Resources\MenuResource;
-use App\Models\Menu;
-use App\Models\Role;
-use App\Services\PermissionService;
+use App\Services\MenuService;
 
 class MenuController extends Controller
-{   
+{
     public function __construct(
-        protected Menu $menuModel,
-        protected Role $roleModel
-    ){}
+        protected MenuService $menuService
+    ) {}
 
     public function getByRoles()
-    {   
-        $userRoles = auth()->user()->roles->pluck('id');
-
-        if (!PermissionService::isNoxusUser()) {
-            // A menu the user is allowed to see: active role, can_view on this menu.
-            $viewable = function ($query) use ($userRoles) {
-                $query->whereIn('role_id', $userRoles)
-                    ->where('can_view', true)
-                    ->where('roles.status', Status::ACTIVE->value);
-            };
-
-            $menus = $this->menuModel
-                ->where('parent_id', null)
-                ->where('status', Status::ACTIVE->value)
-                ->where(function ($query) use ($viewable) {
-                    // Show a top-level menu if it is a viewable leaf itself...
-                    $query->whereHas('roles', $viewable)
-                        // ...or a container with at least one viewable child.
-                        ->orWhereHas('children', function ($child) use ($viewable) {
-                            $child->where('status', Status::ACTIVE->value)
-                                ->whereHas('roles', $viewable);
-                        });
-                })
-                ->with(['children' => function ($query) use ($viewable) {
-                    $query->where('status', Status::ACTIVE->value)
-                        ->whereHas('roles', $viewable)
-                        ->orderBy('order');
-                }])
-                ->orderBy('order')->get();
-
-        } else {
-
-            $menus = $this->menuModel
-                ->where('parent_id', null)
-                ->where('status', Status::ACTIVE->value) 
-                ->with(['children' => function ($query) {
-                    $query->where('status', Status::ACTIVE->value)
-                        ->orderBy('order');
-                }])
-                ->orderBy('order')->get();
-        }
-
-
-
-        return MenuResource::collection($menus);
+    {
+        return MenuResource::collection($this->menuService->getByRoles());
     }
 
     public function getActive()
-    {   
-        $userRoles = auth()->user()->roles->pluck('id');
-        $menusQuery = $this->menuModel
-            ->where('parent_id', null)
-            ->where('status', Status::ACTIVE->value) 
-            ->with(['children' => function ($query) {
-                $query->where('status', Status::ACTIVE->value);
-            }])
-            ->orderBy('order');
-        
-        if (!PermissionService::isNoxusUser()) {
-            $menusQuery->where('exclusive_noxus', false);
-        }
-    
-        return MenuResource::collection($menusQuery->get());
-    }
-    
-    public function index()
-    {   
-        return MenuResource::collection($this->menuModel->with('parent')->get());
+    {
+        return MenuResource::collection($this->menuService->getActive());
     }
 
-    public function store(MenuStoreUpdateRequest $request)
+    public function index()
     {
-        $data = $request->validated();
-        $menu = $this->menuModel->create([
-            'name' => $data['name'],
-            'key' => $data['key'],
-            'route' => $data['route'] ?? null,
-            'icon' => $data['icon'] ?? null,
-            'parent_id' => $data['parent_id'] ?? null,
-            'exclusive_noxus' => $data['exclusive_noxus'],
-            'order' => $data['order'] ?? 0,
-            'status' => $data['status'] ?? Status::ACTIVE->value
-        ]);
-        return $menu;
+        return MenuResource::collection($this->menuService->list());
+    }
+
+    public function store(StoreUpdateMenuRequest $request)
+    {
+        return new MenuResource(
+            $this->menuService->create(MenuDTO::fromRequest($request))
+        );
     }
 
     public function show(string $id)
     {
-        $menu = $this->menuModel->with([
-            'parent',
-            'roles' => function ($query) {
-                $query->withPivot(['can_view', 'can_create', 'can_update']);
-            }
-        ])->findOrFail($id);
-
-        return new MenuResource($menu);
+        return new MenuResource($this->menuService->find($id));
     }
 
-    public function update(MenuStoreUpdateRequest $request, string $id)
+    public function update(StoreUpdateMenuRequest $request, string $id)
     {
-        $data = $request->validated();
-        $menu = $this->menuModel->findOrFail($id);
-        $menu->update([
-            'name' => $data['name'],
-            'route' => $data['route'],
-            'icon' => $data['icon'] ?? null,
-            'parent_id' => $data['parent_id'] ?? null,
-            'exclusive_noxus' => $data['exclusive_noxus'],
-            'order' => $data['order'] ?? 1,
-            'status' => $data['status']
-        ]);
-
-        return new MenuResource($menu);
+        return new MenuResource(
+            $this->menuService->update($id, MenuDTO::fromRequest($request))
+        );
     }
 
     public function changeStatus(string $id)
-    {   
-        $menu = $this->menuModel->findOrFail($id);
-        $menu->status = $menu->status === Status::ACTIVE->value 
-            ? Status::INACTIVE->value 
-            : Status::ACTIVE->value;
-        $menu->save();
-        return new MenuResource($menu);
+    {
+        return new MenuResource($this->menuService->changeStatus($id));
     }
 
     public function destroy(string $id)
     {
-        $menu = $this->menuModel->findOrFail($id);
-        $menu->roles()->detach();
-        $menu->delete();
+        $this->menuService->delete($id);
+
         return response()->noContent();
     }
 }
