@@ -11,8 +11,8 @@ class PermissionService
     public function preparePermissions(array $permissions, Model $model, string $relationId): array
     {
         User::forgetUserPermissionsCache();
-        
-        $preparedPermissions = collect($permissions)->mapWithKeys(function ($permission) use ($relationId) {
+
+        $submitted = collect($permissions)->mapWithKeys(function ($permission) use ($relationId) {
             return [
                 $permission[$relationId] => [
                     'can_view' => $permission['can_view'],
@@ -20,16 +20,18 @@ class PermissionService
                     'can_update' => $permission['can_update'],
                 ],
             ];
-        })->toArray();
+        });
 
-        foreach ($model->all() as $entity) {
-            if (!isset($preparedPermissions[$entity->id])) {
-                $preparedPermissions[$entity->id] = [
-                    'can_view' => 0,
-                    'can_create' => 0,
-                    'can_update' => 0,
-                ];
-            }
+        // Only leaf menus (those with a route) are permission units; container menus
+        // (route null) derive their visibility from their children and never carry permissions.
+        $preparedPermissions = [];
+
+        foreach ($model->whereNotNull('route')->pluck('id') as $menuId) {
+            $preparedPermissions[$menuId] = $submitted->get($menuId, [
+                'can_view' => 0,
+                'can_create' => 0,
+                'can_update' => 0,
+            ]);
         }
 
         return $preparedPermissions;

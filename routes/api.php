@@ -22,52 +22,52 @@ Route::prefix('users')->middleware('auth')->controller(UserController::class)->g
     Route::get('/user', function (Request $request) {
         return $request->user();
     });
-    Route::get('/', 'index')->middleware('check.permissions:Usuários,view');
-    Route::get('/{id}', 'show')->middleware('check.permissions:Usuários,view');
-    Route::put('/{id}', 'update')->middleware('check.permissions:Usuários,update');
-    Route::post('/', 'store')->middleware('check.permissions:Usuários,create');
-    Route::put('/{id}/status', 'changeStatus')->middleware('check.permissions:Usuários,update');
-    Route::delete('/{id}', 'destroy')->middleware('check.permissions:Usuários,update');
+    Route::get('/', 'index')->middleware('check.permissions:users,view');
+    Route::get('/{id}', 'show')->middleware('check.permissions:users,view');
+    Route::put('/{id}', 'update')->middleware('check.permissions:users,update');
+    Route::post('/', 'store')->middleware('check.permissions:users,create');
+    Route::put('/{id}/status', 'changeStatus')->middleware('check.permissions:users,update');
+    Route::delete('/{id}', 'destroy')->middleware('check.permissions:users,update');
     Route::put('/{id}/change-password', 'changePassword');
 });
 
 Route::prefix('roles')->middleware('auth')->controller(RoleController::class)->group(function () {
     Route::get('/getactive', 'getActive');
-    Route::get('/', 'index')->middleware('check.permissions:Perfis,view');
-    Route::get('/{id}', 'show')->middleware('check.permissions:Perfis,view');
-    Route::put('/{id}', 'update')->middleware('check.permissions:Perfis,update');
-    Route::post('/', 'store')->middleware('check.permissions:Perfis,create');
-    Route::put('/{id}/status', 'changeStatus')->middleware('check.permissions:Perfis,update');
-    Route::delete('/{id}', 'destroy')->middleware('check.permissions:Perfis,update');
+    Route::get('/', 'index')->middleware('check.permissions:roles,view');
+    Route::get('/{id}', 'show')->middleware('check.permissions:roles,view');
+    Route::put('/{id}', 'update')->middleware('check.permissions:roles,update');
+    Route::post('/', 'store')->middleware('check.permissions:roles,create');
+    Route::put('/{id}/status', 'changeStatus')->middleware('check.permissions:roles,update');
+    Route::delete('/{id}', 'destroy')->middleware('check.permissions:roles,update');
 });
 
 Route::prefix('menus')->middleware('auth')->controller(MenuController::class)->group(function () {
     Route::get('/getbyroles', 'getByRoles');
     Route::get('/getactive', 'getActive');
-    Route::get('/', 'index')->middleware('check.permissions:Menus,view');
-    Route::get('/{id}', 'show')->middleware('check.permissions:Menus,view');
-    Route::put('/{id}', 'update')->middleware('check.permissions:Menus,update');
-    Route::post('/', 'store')->middleware('check.permissions:Menus,create');
-    Route::put('/{id}/status', 'changeStatus')->middleware('check.permissions:Menus,update');
-    Route::delete('/{id}', 'destroy')->middleware('check.permissions:Menus,update');
+    Route::get('/', 'index')->middleware('check.permissions:menus,view');
+    Route::get('/{id}', 'show')->middleware('check.permissions:menus,view');
+    Route::put('/{id}', 'update')->middleware('check.permissions:menus,update');
+    Route::post('/', 'store')->middleware('check.permissions:menus,create');
+    Route::put('/{id}/status', 'changeStatus')->middleware('check.permissions:menus,update');
+    Route::delete('/{id}', 'destroy')->middleware('check.permissions:menus,update');
 });
 
 Route::prefix('customers')->middleware('auth')->controller(CustomerController::class)->group(function () {
-    Route::get('/', 'index')->middleware('check.permissions:Clientes,view');
-    Route::get('/{id}', 'show')->middleware('check.permissions:Clientes,view');
-    Route::put('/{id}', 'update')->middleware('check.permissions:Clientes,update');
-    Route::post('/', 'store')->middleware('check.permissions:Clientes,create');
-    Route::put('/{id}/status', 'changeStatus')->middleware('check.permissions:Clientes,update');
-    Route::delete('/{id}', 'destroy')->middleware('check.permissions:Clientes,update');
+    Route::get('/', 'index')->middleware('check.permissions:customers,view');
+    Route::get('/{id}', 'show')->middleware('check.permissions:customers,view');
+    Route::put('/{id}', 'update')->middleware('check.permissions:customers,update');
+    Route::post('/', 'store')->middleware('check.permissions:customers,create');
+    Route::put('/{id}/status', 'changeStatus')->middleware('check.permissions:customers,update');
+    Route::delete('/{id}', 'destroy')->middleware('check.permissions:customers,update');
 });
 
 Route::prefix('suppliers')->middleware('auth')->controller(SupplierController::class)->group(function () {
-    Route::get('/', 'index')->middleware('check.permissions:Fornecedores,view');
-    Route::get('/{id}', 'show')->middleware('check.permissions:Fornecedores,view');
-    Route::put('/{id}', 'update')->middleware('check.permissions:Fornecedores,update');
-    Route::post('/', 'store')->middleware('check.permissions:Fornecedores,create');
-    Route::put('/{id}/status', 'changeStatus')->middleware('check.permissions:Fornecedores,update');
-    Route::delete('/{id}', 'destroy')->middleware('check.permissions:Fornecedores,update');
+    Route::get('/', 'index')->middleware('check.permissions:suppliers,view');
+    Route::get('/{id}', 'show')->middleware('check.permissions:suppliers,view');
+    Route::put('/{id}', 'update')->middleware('check.permissions:suppliers,update');
+    Route::post('/', 'store')->middleware('check.permissions:suppliers,create');
+    Route::put('/{id}/status', 'changeStatus')->middleware('check.permissions:suppliers,update');
+    Route::delete('/{id}', 'destroy')->middleware('check.permissions:suppliers,update');
 });
 
 Route::prefix('live-code')->controller(MenuController::class)->group(function () {

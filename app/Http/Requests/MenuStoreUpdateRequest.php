@@ -21,6 +21,13 @@ class MenuStoreUpdateRequest extends FormRequest
                 'max:255',
                 Rule::unique('menus')->whereNull('deleted_at')->ignore($this->id)
             ],
+            'key' => [
+                $this->isMethod('post') ? 'required' : 'prohibited',
+                'string',
+                'max:255',
+                'regex:/^[a-z0-9_]+$/',
+                Rule::unique('menus')->whereNull('deleted_at')->ignore($this->id)
+            ],
             'route' => [
                 'nullable',
                 'string',
@@ -62,6 +69,11 @@ class MenuStoreUpdateRequest extends FormRequest
             'name.unique' => 'O campo nome já está em uso.',
             'name.min' => 'O nome deve ter pelo menos 3 caracteres.',
             'name.max' => 'O nome não pode ter mais de 255 caracteres.',
+            'key.required' => 'O campo chave é obrigatório.',
+            'key.prohibited' => 'A chave não pode ser alterada após a criação.',
+            'key.unique' => 'A chave já está em uso.',
+            'key.regex' => 'A chave deve conter apenas letras minúsculas, números e underline.',
+            'key.max' => 'A chave não pode ter mais de 255 caracteres.',
             'route.unique' => 'A rota já está em uso.',
             'route.max' => 'A rota não pode ter mais de 255 caracteres.',
             'icon.required' => 'O campo ícone é obrigatório.',

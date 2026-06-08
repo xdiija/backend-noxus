@@ -8,10 +8,10 @@ use Illuminate\Support\Facades\Auth;
 
 class CheckPermissions
 {
-    public function handle($request, Closure $next, $menuName, $permission)
-    {   
+    public function handle($request, Closure $next, $menuKey, $permission)
+    {
         $isNoxusUser = PermissionService::isNoxusUser();
-        $hasPermission = Auth::user()->hasPermission($menuName, $permission);
+        $hasPermission = Auth::user()->hasPermission($menuKey, $permission);
 
         if (!$isNoxusUser && !$hasPermission) {
             return response()->json([
