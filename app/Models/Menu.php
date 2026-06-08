@@ -10,7 +10,7 @@ class Menu extends Model
 {
     use HasFactory, SoftDeletes;
 
-    protected $fillable = ['name', 'route', 'parent_id', 'icon', 'order', 'status', 'exclusive_noxus'];
+    protected $fillable = ['name', 'key', 'route', 'parent_id', 'icon', 'order', 'status', 'exclusive_noxus'];
 
     public function roles()
     {

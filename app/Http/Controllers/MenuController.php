@@ -21,24 +21,29 @@ class MenuController extends Controller
         $userRoles = auth()->user()->roles->pluck('id');
 
         if (!PermissionService::isNoxusUser()) {
+            // A menu the user is allowed to see: active role, can_view on this menu.
+            $viewable = function ($query) use ($userRoles) {
+                $query->whereIn('role_id', $userRoles)
+                    ->where('can_view', true)
+                    ->where('roles.status', Status::ACTIVE->value);
+            };
+
             $menus = $this->menuModel
-                ->whereHas('roles', function ($query) use ($userRoles) {
-                    $query
-                        ->whereIn('role_id', $userRoles)
-                        ->where('can_view', true)
-                        ->where('status', Status::ACTIVE->value);
-                })
                 ->where('parent_id', null)
-                ->where('status', Status::ACTIVE->value) 
-                ->with(['children' => function ($query) use ($userRoles) {
-                    $query
-                        ->where('status', Status::ACTIVE->value)
-                        ->whereHas('roles', function ($query) use ($userRoles) {
-                            $query->whereIn('role_id', $userRoles)
-                            ->where('can_view', true)
-                            ->where('status', Status::ACTIVE->value)
-                                ->orderBy('order');
+                ->where('status', Status::ACTIVE->value)
+                ->where(function ($query) use ($viewable) {
+                    // Show a top-level menu if it is a viewable leaf itself...
+                    $query->whereHas('roles', $viewable)
+                        // ...or a container with at least one viewable child.
+                        ->orWhereHas('children', function ($child) use ($viewable) {
+                            $child->where('status', Status::ACTIVE->value)
+                                ->whereHas('roles', $viewable);
                         });
+                })
+                ->with(['children' => function ($query) use ($viewable) {
+                    $query->where('status', Status::ACTIVE->value)
+                        ->whereHas('roles', $viewable)
+                        ->orderBy('order');
                 }])
                 ->orderBy('order')->get();
 
@@ -87,6 +92,7 @@ class MenuController extends Controller
         $data = $request->validated();
         $menu = $this->menuModel->create([
             'name' => $data['name'],
+            'key' => $data['key'],
             'route' => $data['route'] ?? null,
             'icon' => $data['icon'] ?? null,
             'parent_id' => $data['parent_id'] ?? null,
