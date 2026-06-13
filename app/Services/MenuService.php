@@ -27,7 +27,7 @@ class MenuService
                 ->get();
         }
 
-        $userRoles = auth()->user()->roles->pluck('id');
+        $userRoles = [auth()->user()->role_id];
 
         // A menu the user is allowed to see: active role, can_view on this menu.
         $viewable = function ($query) use ($userRoles) {

@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Redis;
@@ -24,7 +24,8 @@ class User extends Authenticatable implements JWTSubject
         'name',
         'email',
         'password',
-        'status'
+        'status',
+        'role_id'
     ];
 
     /**
@@ -66,9 +67,9 @@ class User extends Authenticatable implements JWTSubject
         return [];
     }
 
-    public function roles(): BelongsToMany
+    public function role(): BelongsTo
     {
-        return $this->belongsToMany(Role::class, 'user_role');
+        return $this->belongsTo(Role::class);
     }
     /**
      * Summary of hasPermission
@@ -84,7 +85,7 @@ class User extends Authenticatable implements JWTSubject
         $hasPermission = Cache::get($cacheKey);
 
         if ($hasPermission === null) {
-            $hasPermission = $this->roles()
+            $hasPermission = $this->role()
                 ->where('roles.status', 1)
                 ->join('role_menu', 'roles.id', '=', 'role_menu.role_id')
                 ->join('menus', 'menus.id', '=', 'role_menu.menu_id')

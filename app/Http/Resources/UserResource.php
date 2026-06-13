@@ -19,12 +19,10 @@ class UserResource extends JsonResource
                 'id' => $this->status,
                 'name' => Status::tryFrom($this->status)?->label(),
             ],
-            'roles' => $this->roles->map(function ($role) {
-                return [
-                    'id' => $role->id,
-                    'name' => $role->name,
-                ];
-            }),
+            'role' => $this->role ? [
+                'id' => $this->role->id,
+                'name' => $this->role->name,
+            ] : null,
             'last_login' => DateHelper::toBR($this->last_login),
             'updated_at' => DateHelper::toBR($this->updated_at),
             'created_at' => DateHelper::toBR($this->created_at)

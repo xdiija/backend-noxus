@@ -36,11 +36,10 @@ namespace App\Docs;
  *                     @OA\Property(property="id", type="integer", example=1),
  *                     @OA\Property(property="name", type="string", example="Ativo")
  *                 ),
- *                 @OA\Property(property="roles", type="array", @OA\Items(
- *                     type="object",
+ *                 @OA\Property(property="role", type="object",
  *                     @OA\Property(property="id", type="integer", example=1),
  *                     @OA\Property(property="name", type="string", example="Desenvolvimento")
- *                 )),
+ *                 ),
  *                 @OA\Property(property="last_login", type="string", format="date-time", example=null),
  *                 @OA\Property(property="created_at", type="string", format="date", example="14/04/2025"),
  *                 @OA\Property(property="updated_at", type="string", format="date", example="14/04/2025")

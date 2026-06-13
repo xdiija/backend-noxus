@@ -11,7 +11,7 @@ class UpdateUserDTO
         public readonly string $email,
         public readonly ?string $password,
         public readonly int $status,
-        public readonly array $roles,
+        public readonly int $role,
     ) {}
 
     public static function fromRequest(StoreUpdateUserRequestRequest $request): self
@@ -23,7 +23,7 @@ class UpdateUserDTO
             email: $data['email'],
             password: $data['password'] ?? null,
             status: (int) $data['status'],
-            roles: $data['roles'],
+            role: (int) $data['role'],
         );
     }
 
@@ -33,6 +33,7 @@ class UpdateUserDTO
             'name' => $this->name,
             'email' => $this->email,
             'status' => $this->status,
+            'role_id' => $this->role,
         ];
 
         if ($this->password) {

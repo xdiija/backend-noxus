@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Role;
 
+use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -27,6 +28,7 @@ class StoreUpdateRoleRequest extends FormRequest
                 'in:1,2'
             ],
             'permissions' => [
+                'required',
                 'array'
             ],
             'permissions.*.menu_id' => [
@@ -49,6 +51,25 @@ class StoreUpdateRoleRequest extends FormRequest
         ];
 
         return $rules;
+    }
+
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator) {
+            $hasEnabledPermission = collect($this->input('permissions', []))
+                ->contains(function ($permission) {
+                    return filter_var($permission['can_view'] ?? false, FILTER_VALIDATE_BOOLEAN)
+                        || filter_var($permission['can_create'] ?? false, FILTER_VALIDATE_BOOLEAN)
+                        || filter_var($permission['can_update'] ?? false, FILTER_VALIDATE_BOOLEAN);
+                });
+
+            if (!$hasEnabledPermission) {
+                $validator->errors()->add(
+                    'permissions',
+                    'O perfil deve ter pelo menos uma permissão habilitada.'
+                );
+            }
+        });
     }
 
     public function messages(): array

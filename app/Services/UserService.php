@@ -13,7 +13,7 @@ class UserService
 {
     public function list(int $perPage = 10, string $filter = ''): LengthAwarePaginator
     {
-        $query = User::with('roles');
+        $query = User::with('role');
 
         if (!empty($filter)) {
             $query->where('name', 'like', "%{$filter}%");
@@ -24,40 +24,32 @@ class UserService
         }
 
         if (PermissionService::isAdminUser()) {
-            $query->whereDoesntHave('roles', function ($roleQuery) {
-                $roleQuery->where('roles.id', 1);
-            });
+            $query->where('role_id', '!=', 1);
             return $query->paginate($perPage);
         }
 
         if (PermissionService::isRegularUser()) {
-            $query->whereDoesntHave('roles', function ($roleQuery) {
-                $roleQuery->whereIn('roles.id', [1, 2]);
-            });
+            $query->whereNotIn('role_id', [1, 2]);
         }
-            
+
         return $query->paginate($perPage);
     }
 
     public function find(string $id): User
     {
-        $query = User::with('roles');
+        $query = User::with('role');
 
         if (PermissionService::isNoxusUser()) {
             return $query->findOrFail($id);
         }
 
         if (PermissionService::isAdminUser()) {
-            $query->whereDoesntHave('roles', function ($roleQuery) {
-                $roleQuery->where('roles.id', 1);
-            });
+            $query->where('role_id', '!=', 1);
             return $query->findOrFail($id);
         }
 
         if (PermissionService::isRegularUser()) {
-            $query->whereDoesntHave('roles', function ($roleQuery) {
-                $roleQuery->whereIn('roles.id', [1, 2]);
-            });
+            $query->whereNotIn('role_id', [1, 2]);
         }
 
         return $query->findOrFail($id);
@@ -68,7 +60,6 @@ class UserService
         $data = $dto->toArray();
         $data['password'] = bcrypt($data['password']);
         $user = User::create($data);
-        $user->roles()->sync($dto->roles);
 
         return $user;
     }
@@ -83,7 +74,6 @@ class UserService
         }
 
         $user->update($data);
-        $user->roles()->sync($dto->roles);
         User::forgetUserPermissionsCache();
 
         return $user;
@@ -118,7 +108,6 @@ class UserService
     public function delete(string $id): void
     {
         $user = User::findOrFail($id);
-        $user->roles()->detach();
         $user->delete();
     }
 }

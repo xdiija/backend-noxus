@@ -25,7 +25,6 @@ class StoreUpdateCustomerRequest extends FormRequest
                 'max:255'
             ],
             'email' => [
-                'required',
                 'email',
                 'max:255',
                 Rule::unique('customers')->ignore($this->id)
@@ -37,11 +36,9 @@ class StoreUpdateCustomerRequest extends FormRequest
                 Rule::unique('customers')->ignore($this->id)
             ],
             'phone_1' => [
-                'required',
                 new PhoneRule
             ],
             'phone_2' => [
-                'required',
                 new PhoneRule
             ],
             'status' => [

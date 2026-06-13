@@ -11,7 +11,7 @@ class CreateUserDTO
         public readonly string $email,
         public readonly string $password,
         public readonly int $status,
-        public readonly array $roles,
+        public readonly int $role,
     ) {}
 
     public static function fromRequest(StoreUpdateUserRequestRequest $request): self
@@ -23,7 +23,7 @@ class CreateUserDTO
             email: $data['email'],
             password: $data['password'],
             status: (int) $data['status'],
-            roles: $data['roles'],
+            role: (int) $data['role'],
         );
     }
 
@@ -34,6 +34,7 @@ class CreateUserDTO
             'email' => $this->email,
             'password' => $this->password,
             'status' => $this->status,
+            'role_id' => $this->role,
         ];
     }
 }

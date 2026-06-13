@@ -85,7 +85,7 @@ class RoleService
     public function delete(string $id): void
     {
         $role = Role::findOrFail($id);
-        $role->users()->detach();
+        $role->users()->update(['role_id' => null]);
         $role->menus()->detach();
         $role->delete();
     }

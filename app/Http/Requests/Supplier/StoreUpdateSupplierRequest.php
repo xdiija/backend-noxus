@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests\Supplier;
 
+use App\Helpers\CnpjHelper;
 use App\Helpers\PhoneHelper;
+use App\Rules\CnpjRule;
 use App\Rules\PhoneRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -40,6 +42,7 @@ class StoreUpdateSupplierRequest extends FormRequest
             'cnpj' => [
                 'required',
                 'max:20',
+                new CnpjRule,
                 Rule::unique('suppliers')->ignore($this->id)
             ],
             'phone_1' => [
@@ -63,6 +66,7 @@ class StoreUpdateSupplierRequest extends FormRequest
         $this->merge([
             'phone_1' => PhoneHelper::sanitize($this->phone_1),
             'phone_2' => PhoneHelper::sanitize($this->phone_2),
+            'cnpj' => CnpjHelper::sanitize($this->cnpj),
         ]);
     }
 

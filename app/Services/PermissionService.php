@@ -39,14 +39,12 @@ class PermissionService
 
     public static function isNoxusUser(): bool
     {
-        $userRoles = auth()->user()->roles->pluck('id');
-        return $userRoles->contains(Role::NOXUS_ROLE);
+        return (int) auth()->user()->role_id === Role::NOXUS_ROLE;
     }
 
     public static function isAdminUser(): bool
     {
-        $userRoles = auth()->user()->roles->pluck('id');
-        return $userRoles->contains(Role::ADMIN_ROLE);
+        return (int) auth()->user()->role_id === Role::ADMIN_ROLE;
     }
 
     public static function isRegularUser(): bool

@@ -36,11 +36,8 @@ class StoreUpdateUserRequestRequest extends FormRequest
                 'integer',
                 'in:1,2'
             ],
-            'roles' => [
+            'role' => [
                 'required',
-                'array'
-            ],
-            'roles.*' => [
                 'integer',
                 'exists:roles,id'
             ]
@@ -78,6 +75,9 @@ class StoreUpdateUserRequestRequest extends FormRequest
             'status.required' => 'O campo status é obrigatório.',
             'status.integer' => 'O campo status deve ser um número inteiro.',
             'status.in' => 'O campo status deve ser 1 ou 2.',
+            'role.required' => 'O campo perfil é obrigatório.',
+            'role.integer' => 'O campo perfil deve ser um número inteiro.',
+            'role.exists' => 'O perfil informado é inválido.',
         ];
     }
 }
