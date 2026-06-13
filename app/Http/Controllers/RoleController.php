@@ -2,118 +2,60 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\Status;
-use App\Http\Requests\RoleStoreUpdateRequest;
+use App\DTOs\Role\RoleDTO;
+use App\Http\Requests\Role\StoreUpdateRoleRequest;
 use App\Http\Resources\RoleResource;
-use App\Models\Menu;
-use App\Models\Role;
-use App\Services\PermissionService;
+use App\Services\RoleService;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class RoleController extends Controller
 {
     public function __construct(
-        protected Menu $menuModel,
-        protected Role $roleModel,
-        protected PermissionService $permissionService
-    ){}
-
-    protected function getRolesBasedOnUser($isActive = false)
-    {
-        $query = $this->roleModel;
-        
-        if ($isActive) {
-            $query = $query->where('status', Status::ACTIVE->value);
-        }
-    
-        if (PermissionService::isNoxusUser()) {
-            return $query->get();
-        } elseif (PermissionService::isAdminUser()) {
-            return $query->where('id', '!=', 1)->get();
-        } else {
-            return $query->whereNotIn('id', [1, 2])->get();
-        }
-    }
+        protected RoleService $roleService
+    ) {}
 
     public function getActive()
-    {   
-        return RoleResource::collection(
-            $this->getRolesBasedOnUser(true)
-        );
+    {
+        return RoleResource::collection($this->roleService->list(true));
     }
 
     public function index()
     {
-        return RoleResource::collection(
-            $this->getRolesBasedOnUser()
-        );
+        return RoleResource::collection($this->roleService->list());
     }
 
-    public function store(RoleStoreUpdateRequest $request)
+    public function store(StoreUpdateRoleRequest $request)
     {
-        $data = $request->validated();
-        $role = $this->roleModel->create([
-            'name' => $data["name"],
-            'status' => $data['status'] ?? Status::ACTIVE->value
-        ]);
-        $permissions = $this->permissionService->preparePermissions(
-            $data['permissions'], $this->menuModel, 'menu_id'
+        return new RoleResource(
+            $this->roleService->create(RoleDTO::fromRequest($request))
         );
-        $role->menus()->sync($permissions);
-
-        return $role;
     }
 
     public function show(string $id)
     {
-        $query = Role::with(['menus' => function ($query) {
-            $query->withPivot(['can_view', 'can_create', 'can_update']);
-        }]);
-    
-        if (!PermissionService::isNoxusUser() && !PermissionService::isAdminUser()) {
-            $query->whereNotIn('id', [1, 2]);
-        } else if (!PermissionService::isNoxusUser() && PermissionService::isAdminUser()) {
-            $query->where('id', '!=', 1);
-        }
-        
         try {
-            $role = $query->findOrFail($id);
-            return new RoleResource($role);
+            return new RoleResource($this->roleService->find($id));
         } catch (ModelNotFoundException $e) {
             return response()->json(['message' => 'Perfil não encontrado ou inacessível.'], 404);
         }
     }
 
-    public function update(RoleStoreUpdateRequest $request, string $id)
+    public function update(StoreUpdateRoleRequest $request, string $id)
     {
-        $data = $request->validated();
-        $role = $this->roleModel->findOrFail($id);
-        $role->update([
-            'name' => $data["name"],
-            'status' => $data['status']
-        ]);
-        $permissions = $this->permissionService->preparePermissions(
-            $data['permissions'], $this->menuModel, 'menu_id'
+        return new RoleResource(
+            $this->roleService->update($id, RoleDTO::fromRequest($request))
         );
-        $role->menus()->sync($permissions);
-
-        return new RoleResource($role);
     }
 
     public function changeStatus(string $id)
-    {   
-        $role = $this->roleModel->findOrFail($id);
-        $role->status = $role->status === Status::ACTIVE->value ? Status::INACTIVE->value : Status::ACTIVE->value;
-        $role->save();
-        return new RoleResource($role);
+    {
+        return new RoleResource($this->roleService->changeStatus($id));
     }
 
     public function destroy(string $id)
     {
-        $role = $this->roleModel->findOrFail($id);
-        $role->users()->detach();
-        $role->menus()->detach();
-        $role->delete();
+        $this->roleService->delete($id);
+
         return response()->noContent();
     }
 }

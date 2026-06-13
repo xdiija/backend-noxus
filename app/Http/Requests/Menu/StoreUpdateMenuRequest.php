@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Http\Requests;
+namespace App\Http\Requests\Menu;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-class MenuStoreUpdateRequest extends FormRequest
+class StoreUpdateMenuRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -22,6 +22,7 @@ class MenuStoreUpdateRequest extends FormRequest
                 Rule::unique('menus')->whereNull('deleted_at')->ignore($this->id)
             ],
             'key' => [
+                // Set once on create, immutable afterwards. Backs check.permissions:<key>,<action>.
                 $this->isMethod('post') ? 'required' : 'prohibited',
                 'string',
                 'max:255',
