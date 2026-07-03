@@ -13,7 +13,6 @@ class MenusTableSeeder extends Seeder
             [
                 //id: 1
                 'name' => 'Administrativo',
-                'key' => 'administrative',
                 'icon' => 'admin_panel_settings',
                 'route' => null,
                 'parent_id' => null,
@@ -24,7 +23,6 @@ class MenusTableSeeder extends Seeder
             [
                 //id: 2
                 'name' => 'Usuários',
-                'key' => 'users',
                 'route' => '/users',
                 'icon' => 'manage_accounts',
                 'parent_id' => 1,
@@ -35,7 +33,6 @@ class MenusTableSeeder extends Seeder
             [
                 //id: 3
                 'name' => 'Perfis',
-                'key' => 'roles',
                 'route' => '/roles',
                 'icon' => 'groups',
                 'parent_id' => 1,
@@ -46,7 +43,6 @@ class MenusTableSeeder extends Seeder
             [
                 //id: 4
                 'name' => 'Menus',
-                'key' => 'menus',
                 'route' => '/menus',
                 'icon' => 'menu',
                 'parent_id' => 1,
@@ -57,7 +53,6 @@ class MenusTableSeeder extends Seeder
             [
                 //id: 5
                 'name' => 'Comercial',
-                'key' => 'commercial',
                 'icon' => 'business_center',
                 'route' => null,
                 'parent_id' => null,
@@ -68,7 +63,6 @@ class MenusTableSeeder extends Seeder
             [
                 //id: 6
                 'name' => 'Clientes',
-                'key' => 'customers',
                 'route' => '/customers',
                 'icon' => 'person',
                 'parent_id' => 5,
@@ -79,7 +73,6 @@ class MenusTableSeeder extends Seeder
             [
                 //id: 7
                 'name' => 'Fornecedores',
-                'key' => 'suppliers',
                 'route' => '/suppliers',
                 'icon' => 'person_4',
                 'parent_id' => 5,

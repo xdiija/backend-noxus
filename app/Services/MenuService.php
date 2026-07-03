@@ -39,17 +39,22 @@ class MenuService
         return Menu::query()
             ->whereNull('parent_id')
             ->where('status', Status::ACTIVE->value)
+            // Noxus-exclusive menus are never shown to non-noxus users, even if
+            // their role was granted view permission on them.
+            ->where('exclusive_noxus', false)
             ->where(function ($query) use ($viewable) {
                 // Show a top-level menu if it is a viewable leaf itself...
                 $query->whereHas('roles', $viewable)
-                    // ...or a container with at least one viewable child.
+                    // ...or a container with at least one viewable, non-exclusive child.
                     ->orWhereHas('children', function ($child) use ($viewable) {
                         $child->where('status', Status::ACTIVE->value)
+                            ->where('exclusive_noxus', false)
                             ->whereHas('roles', $viewable);
                     });
             })
             ->with(['children' => function ($query) use ($viewable) {
                 $query->where('status', Status::ACTIVE->value)
+                    ->where('exclusive_noxus', false)
                     ->whereHas('roles', $viewable)
                     ->orderBy('order');
             }])

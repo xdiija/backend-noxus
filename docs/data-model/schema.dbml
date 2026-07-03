@@ -1,0 +1,395 @@
+// Noxus — Shelter / ONG data model
+// Snapshot of the Laravel migrations (2026_07_01_*). Migrations are canonical;
+// this file is the ERD source (render at https://dbdocs.io).
+// Convention: every entity has created_at/updated_at; entities also have
+// deleted_at (soft deletes). Money is decimal(10,2). See conventions.md.
+
+Table organizations {
+  id int [pk, increment]
+  name varchar
+  legal_name varchar [null]
+  tax_id varchar [unique, null]
+  email varchar [null]
+  phone varchar [null]
+  website varchar [null]
+  address varchar [null]
+  city varchar [null]
+  state varchar [null]
+}
+
+// users is inherited from the base project; the shelter module adds:
+Table users {
+  id int [pk, increment]
+  organization_id int [null] // added by the shelter module
+}
+
+// ---------- Global reference (not org-scoped) ----------
+
+Table species {
+  id int [pk, increment]
+  name varchar [unique]
+}
+
+Table breeds {
+  id int [pk, increment]
+  species_id int [not null]
+  name varchar
+  indexes { (species_id, name) [unique] }
+}
+
+Table vaccines {
+  id int [pk, increment]
+  name varchar [unique]
+}
+
+Table medications {
+  id int [pk, increment]
+  name varchar
+  description text [null]
+}
+
+// ---------- Configurable lookups (org_id NULL = system default) ----------
+
+Table animal_statuses {
+  id int [pk, increment]
+  organization_id int [null]
+  name varchar
+  color varchar [null]
+  sort_order int [default: 0]
+  is_default boolean [default: false]
+}
+
+Table animal_sizes {
+  id int [pk, increment]
+  organization_id int [null]
+  name varchar
+  sort_order int [default: 0]
+}
+
+Table adoption_statuses {
+  id int [pk, increment]
+  organization_id int [null]
+  name varchar
+  color varchar [null]
+  sort_order int [default: 0]
+  is_default boolean [default: false]
+}
+
+Table adoption_follow_up_statuses {
+  id int [pk, increment]
+  organization_id int [null]
+  name varchar
+  color varchar [null]
+}
+
+Table donation_types {
+  id int [pk, increment]
+  organization_id int [null]
+  name varchar
+}
+
+Table expense_categories {
+  id int [pk, increment]
+  organization_id int [null]
+  name varchar
+}
+
+Table tags {
+  id int [pk, increment]
+  organization_id int [null]
+  name varchar
+}
+
+// ---------- Animals ----------
+
+Table animals {
+  id int [pk, increment]
+  organization_id int [not null]
+  name varchar
+  species_id int [not null]
+  breed_id int [null]
+  sex char [null] // M / F
+  estimated_birth_date date [null]
+  birth_date_is_estimated boolean [default: true]
+  size_id int [not null]
+  color varchar [null]
+  microchip varchar [unique, null]
+  neutered boolean [default: false]
+  neuter_date date [null]
+  status_id int [not null]
+  notes text [null]
+}
+
+Table rescues {
+  id int [pk, increment]
+  organization_id int [not null]
+  animal_id int [not null, unique] // 1:1 intake event
+  rescue_date datetime
+  location varchar [null]
+  rescued_by varchar [null]
+  condition varchar [null]
+  description text [null]
+}
+
+Table animal_images {
+  id int [pk, increment]
+  animal_id int [not null]
+  path varchar
+}
+
+Table animal_status_history {
+  id int [pk, increment]
+  animal_id int [not null]
+  old_status_id int [null]
+  new_status_id int [not null]
+  changed_by int [null] // users.id
+  notes text [null]
+}
+
+Table animal_tags {
+  animal_id int [not null]
+  tag_id int [not null]
+  indexes { (animal_id, tag_id) [pk] }
+}
+
+// ---------- Health ----------
+
+Table health_records {
+  id int [pk, increment]
+  organization_id int [not null]
+  animal_id int [not null]
+  type varchar
+  description text [null]
+  event_date date
+  veterinarian varchar [null]
+  notes text [null]
+}
+
+Table animal_vaccines {
+  id int [pk, increment]
+  animal_id int [not null]
+  vaccine_id int [not null]
+  application_date date
+  dose varchar [null]
+}
+
+Table animal_medications {
+  id int [pk, increment]
+  animal_id int [not null]
+  medication_id int [not null]
+  dosage varchar [null]
+  start_date date
+  end_date date [null]
+  veterinarian varchar [null]
+  notes text [null]
+}
+
+Table appointments {
+  id int [pk, increment]
+  organization_id int [not null]
+  animal_id int [not null]
+  appointment_date datetime
+  veterinarian varchar [null]
+  clinic varchar [null]
+  purpose varchar [null]
+  result text [null]
+  next_visit date [null]
+}
+
+Table surgeries {
+  id int [pk, increment]
+  organization_id int [not null]
+  animal_id int [not null]
+  surgery_date date
+  procedure varchar
+  veterinarian varchar [null]
+  clinic varchar [null]
+  cost decimal [null]
+  notes text [null]
+}
+
+// ---------- Adoptions ----------
+
+Table adopters {
+  id int [pk, increment]
+  organization_id int [not null]
+  name varchar
+  cpf varchar [null]
+  phone varchar [null]
+  email varchar [null]
+  address varchar [null]
+  city varchar [null]
+  state varchar [null]
+  birth_date date [null]
+  indexes { (organization_id, cpf) [unique] }
+}
+
+Table adoptions {
+  id int [pk, increment]
+  organization_id int [not null]
+  animal_id int [not null] // NOT unique: returns allow re-adoption
+  adopter_id int [not null]
+  adoption_date date
+  status_id int [not null]
+  agreement_signed boolean [default: false]
+  return_date date [null]
+  return_reason text [null]
+  notes text [null]
+}
+
+Table adoption_follow_ups {
+  id int [pk, increment]
+  adoption_id int [not null]
+  follow_up_date date
+  contact_method varchar [null]
+  status_id int [not null]
+  notes text [null]
+}
+
+// ---------- Fostering & people ----------
+
+Table volunteers {
+  id int [pk, increment]
+  organization_id int [not null]
+  name varchar
+  phone varchar [null]
+  email varchar [null]
+  role varchar [null]
+  status boolean [default: true]
+}
+
+Table foster_homes {
+  id int [pk, increment]
+  organization_id int [not null]
+  responsible_name varchar
+  phone varchar [null]
+  address varchar [null]
+  capacity int [null]
+}
+
+Table animal_foster_homes {
+  id int [pk, increment]
+  animal_id int [not null]
+  foster_home_id int [not null]
+  entry_date date
+  exit_date date [null]
+}
+
+// ---------- Finance ----------
+
+Table donors {
+  id int [pk, increment]
+  organization_id int [not null]
+  name varchar
+  email varchar [null]
+  phone varchar [null]
+  notes text [null]
+}
+
+Table donations {
+  id int [pk, increment]
+  organization_id int [not null]
+  donor_id int [null] // optional link; inline fields cover one-off/anonymous
+  donor_name varchar [null]
+  donor_email varchar [null]
+  donor_phone varchar [null]
+  donation_type_id int [not null]
+  amount decimal [null]
+  donation_date date
+  notes text [null]
+}
+
+Table expenses {
+  id int [pk, increment]
+  organization_id int [not null]
+  expense_category_id int [null]
+  description varchar
+  amount decimal
+  expense_date date
+  paid boolean [default: false]
+}
+
+// ---------- System ----------
+
+Table documents {
+  id int [pk, increment]
+  organization_id int [not null]
+  documentable_type varchar [null] // polymorphic owner
+  documentable_id int [null]
+  path varchar
+  type varchar [null]
+}
+
+Table audit_logs {
+  id int [pk, increment]
+  organization_id int [not null]
+  user_id int [null]
+  action varchar
+  entity varchar
+  entity_id int [null]
+  indexes { (entity, entity_id) }
+}
+
+// ---------- Relationships ----------
+
+Ref: users.organization_id > organizations.id
+Ref: breeds.species_id > species.id
+
+Ref: animals.organization_id > organizations.id
+Ref: animals.species_id > species.id
+Ref: animals.breed_id > breeds.id
+Ref: animals.status_id > animal_statuses.id
+Ref: animals.size_id > animal_sizes.id
+
+Ref: rescues.organization_id > organizations.id
+Ref: rescues.animal_id - animals.id
+Ref: animal_images.animal_id > animals.id
+Ref: animal_status_history.animal_id > animals.id
+Ref: animal_status_history.old_status_id > animal_statuses.id
+Ref: animal_status_history.new_status_id > animal_statuses.id
+Ref: animal_status_history.changed_by > users.id
+Ref: animal_tags.animal_id > animals.id
+Ref: animal_tags.tag_id > tags.id
+
+Ref: health_records.organization_id > organizations.id
+Ref: health_records.animal_id > animals.id
+Ref: animal_vaccines.animal_id > animals.id
+Ref: animal_vaccines.vaccine_id > vaccines.id
+Ref: animal_medications.animal_id > animals.id
+Ref: animal_medications.medication_id > medications.id
+Ref: appointments.organization_id > organizations.id
+Ref: appointments.animal_id > animals.id
+Ref: surgeries.organization_id > organizations.id
+Ref: surgeries.animal_id > animals.id
+
+Ref: adopters.organization_id > organizations.id
+Ref: adoptions.organization_id > organizations.id
+Ref: adoptions.animal_id > animals.id
+Ref: adoptions.adopter_id > adopters.id
+Ref: adoptions.status_id > adoption_statuses.id
+Ref: adoption_follow_ups.adoption_id > adoptions.id
+Ref: adoption_follow_ups.status_id > adoption_follow_up_statuses.id
+
+Ref: volunteers.organization_id > organizations.id
+Ref: foster_homes.organization_id > organizations.id
+Ref: animal_foster_homes.animal_id > animals.id
+Ref: animal_foster_homes.foster_home_id > foster_homes.id
+
+Ref: donors.organization_id > organizations.id
+Ref: donations.organization_id > organizations.id
+Ref: donations.donor_id > donors.id
+Ref: donations.donation_type_id > donation_types.id
+Ref: expenses.organization_id > organizations.id
+Ref: expenses.expense_category_id > expense_categories.id
+
+Ref: documents.organization_id > organizations.id
+Ref: audit_logs.organization_id > organizations.id
+Ref: audit_logs.user_id > users.id
+
+Ref: animal_statuses.organization_id > organizations.id
+Ref: animal_sizes.organization_id > organizations.id
+Ref: adoption_statuses.organization_id > organizations.id
+Ref: adoption_follow_up_statuses.organization_id > organizations.id
+Ref: donation_types.organization_id > organizations.id
+Ref: expense_categories.organization_id > organizations.id
+Ref: tags.organization_id > organizations.id

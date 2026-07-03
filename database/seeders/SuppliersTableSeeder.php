@@ -12,6 +12,7 @@ class SuppliersTableSeeder extends Seeder
     {
         DB::table('suppliers')->insert([
             [
+                'organization_id' => 1,
                 'nome_fantasia' => 'Comercial Silva',
                 'razao_social' => 'Comercial Silva LTDA',
                 'inscricao_estadual' => '123456789',
@@ -24,6 +25,7 @@ class SuppliersTableSeeder extends Seeder
                 'updated_at' => now(),
             ],
             [
+                'organization_id' => 1,
                 'nome_fantasia' => 'Distribuidora Central',
                 'razao_social' => 'Distribuidora Central EIRELI',
                 'inscricao_estadual' => null,

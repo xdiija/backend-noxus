@@ -4,6 +4,7 @@ namespace App\Exceptions;
 
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Illuminate\Validation\ValidationException;
+use App\Exceptions\BusinessRuleException;
 use Throwable;
 
 class Handler extends ExceptionHandler
@@ -53,7 +54,13 @@ class Handler extends ExceptionHandler
             return response()->json([
                 'message' => 'Erro na validação dos dados.',
                 'errors' => $exception->errors()
-            ], 422);
+            ], 400);
+        }
+
+        if ($exception instanceof BusinessRuleException) {
+            return response()->json([
+                'message' => $exception->getMessage()
+            ], $exception->getStatusCode());
         }
 
         return parent::render($request, $exception);

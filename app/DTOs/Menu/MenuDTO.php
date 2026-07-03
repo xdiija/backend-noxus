@@ -9,7 +9,6 @@ class MenuDTO
 {
     public function __construct(
         public readonly string $name,
-        public readonly ?string $key,
         public readonly ?string $route,
         public readonly ?int $parent_id,
         public readonly string $icon,
@@ -23,9 +22,7 @@ class MenuDTO
         $data = $request->validated();
 
         return new self(
-            // Key is only present on create; on update the request prohibits it.
             name: $data['name'],
-            key: $data['key'] ?? null,
             route: $data['route'] ?? null,
             parent_id: isset($data['parent_id']) ? (int) $data['parent_id'] : null,
             icon: $data['icon'],
@@ -37,7 +34,7 @@ class MenuDTO
 
     public function toArray(): array
     {
-        $data = [
+        return [
             'name' => $this->name,
             'route' => $this->route,
             'parent_id' => $this->parent_id,
@@ -46,12 +43,5 @@ class MenuDTO
             'status' => $this->status,
             'exclusive_noxus' => $this->exclusive_noxus,
         ];
-
-        // Key is immutable: only included on create.
-        if ($this->key !== null) {
-            $data['key'] = $this->key;
-        }
-
-        return $data;
     }
 }

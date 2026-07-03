@@ -37,13 +37,17 @@ class StoreUpdateSupplierRequest extends FormRequest
                 'nullable',
                 'email',
                 'max:255',
-                Rule::unique('suppliers')->ignore($this->id)
+                Rule::unique('suppliers')
+                    ->where('organization_id', auth()->user()?->organization_id)
+                    ->ignore($this->id)
             ],
             'cnpj' => [
                 'required',
                 'max:20',
                 new CnpjRule,
-                Rule::unique('suppliers')->ignore($this->id)
+                Rule::unique('suppliers')
+                    ->where('organization_id', auth()->user()?->organization_id)
+                    ->ignore($this->id)
             ],
             'phone_1' => [
                 'nullable',

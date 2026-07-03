@@ -23,6 +23,10 @@ class UserResource extends JsonResource
                 'id' => $this->role->id,
                 'name' => $this->role->name,
             ] : null,
+            'organization' => $this->organization ? [
+                'id' => $this->organization->id,
+                'name' => $this->organization->name,
+            ] : null,
             'last_login' => DateHelper::toBR($this->last_login),
             'updated_at' => DateHelper::toBR($this->updated_at),
             'created_at' => DateHelper::toBR($this->created_at)

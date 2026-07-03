@@ -2,12 +2,52 @@
 
 namespace App\Services;
 
+use App\Enums\Status;
+use App\Models\Menu;
 use App\Models\User;
 use App\Models\Role;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 class PermissionService
 {
+    /**
+     * Per-resource permissions for the authenticated user, keyed by the menu
+     * route without its leading slash (e.g. "users"). Consumed by the frontend
+     * to gate edit/create/delete controls. Noxus gets everything.
+     *
+     * @return array<string, array{view: bool, create: bool, update: bool}>
+     */
+    public static function permissionsMap(): array
+    {
+        if (self::isNoxusUser()) {
+            return Menu::query()
+                ->whereNotNull('route')
+                ->pluck('route')
+                ->mapWithKeys(fn ($route) => [
+                    ltrim($route, '/') => ['view' => true, 'create' => true, 'update' => true],
+                ])
+                ->all();
+        }
+
+        return DB::table('menus')
+            ->join('role_menu', 'menus.id', '=', 'role_menu.menu_id')
+            ->join('roles', 'roles.id', '=', 'role_menu.role_id')
+            ->where('role_menu.role_id', auth()->user()->role_id)
+            ->where('roles.status', Status::ACTIVE->value)
+            ->where('menus.exclusive_noxus', false)
+            ->whereNotNull('menus.route')
+            ->get(['menus.route', 'role_menu.can_view', 'role_menu.can_create', 'role_menu.can_update'])
+            ->mapWithKeys(fn ($r) => [
+                ltrim($r->route, '/') => [
+                    'view' => (bool) $r->can_view,
+                    'create' => (bool) $r->can_create,
+                    'update' => (bool) $r->can_update,
+                ],
+            ])
+            ->all();
+    }
+
     public function preparePermissions(array $permissions, Model $model, string $relationId): array
     {
         User::forgetUserPermissionsCache();

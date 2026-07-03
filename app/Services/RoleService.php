@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\DTOs\Role\RoleDTO;
 use App\Enums\Status;
+use App\Exceptions\BusinessRuleException;
 use App\Models\Menu;
 use App\Models\Role;
 use Illuminate\Database\Eloquent\Collection;
@@ -74,7 +75,16 @@ class RoleService
     public function changeStatus(string $id): Role
     {
         $role = Role::findOrFail($id);
-        $role->status = $role->status === Status::ACTIVE->value
+        $deactivating = $role->status === Status::ACTIVE->value;
+
+        // Can't inactivate a role while users still depend on it for access.
+        if ($deactivating && $role->users()->exists()) {
+            throw new BusinessRuleException(
+                'Não é possível inativar um perfil com usuários vinculados.'
+            );
+        }
+
+        $role->status = $deactivating
             ? Status::INACTIVE->value
             : Status::ACTIVE->value;
         $role->save();
@@ -85,7 +95,15 @@ class RoleService
     public function delete(string $id): void
     {
         $role = Role::findOrFail($id);
-        $role->users()->update(['role_id' => null]);
+
+        // Blocking instead of orphaning: nulling role_id would silently strip
+        // these users of all permissions.
+        if ($role->users()->exists()) {
+            throw new BusinessRuleException(
+                'Não é possível excluir um perfil com usuários vinculados.'
+            );
+        }
+
         $role->menus()->detach();
         $role->delete();
     }

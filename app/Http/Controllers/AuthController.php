@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Controller;
+use App\Services\PermissionService;
 use App\Enums\Status;
 
 class AuthController extends Controller
@@ -34,12 +35,20 @@ class AuthController extends Controller
         }
         
         if(auth()->user()->status != Status::ACTIVE->value){
-            return response()->json(['error' => 'Unauthorized'], 401);
+            return response()->json(['error' => 'inactive_user', 'message' => 'Usuário inativo.'], 401);
         }
 
-        $user = ['name' => auth()->user()->name];
+        $authUser = auth()->user();
+        $user = [
+            'name' => $authUser->name,
+            'organization' => $authUser->organization ? [
+                'id' => $authUser->organization->id,
+                'name' => $authUser->organization->name,
+            ] : null,
+        ];
         $menus = $this->menuController->getByRoles()->resolve();
-        return $this->respondWithToken($token, $user, $menus);
+        $permissions = PermissionService::permissionsMap();
+        return $this->respondWithToken($token, $user, $menus, $permissions);
     }
 
     /**
@@ -55,6 +64,11 @@ class AuthController extends Controller
             'name' => $user->name,
             'email' => $user->email,
             'role' => $user->role,
+            'organization' => $user->organization ? [
+                'id' => $user->organization->id,
+                'name' => $user->organization->name,
+            ] : null,
+            'permissions' => PermissionService::permissionsMap(),
         ]);
     }
 
@@ -91,7 +105,7 @@ class AuthController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    protected function respondWithToken($token, $user = [], $menus = [])
+    protected function respondWithToken($token, $user = [], $menus = [], $permissions = [])
     {
         $cookie = cookie(
             'token', 
@@ -109,6 +123,7 @@ class AuthController extends Controller
             ->json([
                 'user' => $user,
                 'menus' => $menus,
+                'permissions' => $permissions,
                 'expires_in' => auth()->factory()->getTTL() * 60
             ])
             ->withCookie($cookie);

@@ -21,6 +21,7 @@ class User extends Authenticatable implements JWTSubject
      * @var array<int, string>
      */
     protected $fillable = [
+        'organization_id',
         'name',
         'email',
         'password',
@@ -71,9 +72,14 @@ class User extends Authenticatable implements JWTSubject
     {
         return $this->belongsTo(Role::class);
     }
+
+    public function organization(): BelongsTo
+    {
+        return $this->belongsTo(Organization::class);
+    }
     /**
      * Summary of hasPermission
-     * @param mixed $menuKey stable menu key (e.g. users, roles, menus)
+     * @param mixed $menuKey menu route without the leading slash (e.g. users, roles, menus)
      * @param mixed $permission view - create - update
      * @return bool
      */
@@ -89,7 +95,10 @@ class User extends Authenticatable implements JWTSubject
                 ->where('roles.status', 1)
                 ->join('role_menu', 'roles.id', '=', 'role_menu.role_id')
                 ->join('menus', 'menus.id', '=', 'role_menu.menu_id')
-                ->where('menus.key', $menuKey)
+                ->where('menus.route', '/' . $menuKey)
+                // Noxus-exclusive menus are never granted to non-noxus users, even
+                // if role_menu says otherwise. Noxus bypasses CheckPermissions.
+                ->where('menus.exclusive_noxus', false)
                 ->where("role_menu.can_{$permission}", 1)
                 ->exists();
 

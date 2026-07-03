@@ -14,7 +14,6 @@ class MenuResource extends JsonResource
         $menuArray = [
             'id' => $this->id,
             'name' => $this->name,
-            'key' => $this->key,
             'route' => $this->route,
             'icon' => $this->icon,
             'exclusive_noxus' => boolval($this->exclusive_noxus),

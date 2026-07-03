@@ -16,11 +16,18 @@ class CustomerController extends Controller
 
     public function index(IndexCustomersRequest $request)
     {
-        return CustomerResource::collection(
+        $response = CustomerResource::collection(
             $this->customerService->list(
                 $request->input('per_page'), $request->input('filter')
             )
-        );
+        )->response();
+
+        $response->setEtag(md5($response->getContent()));
+
+        // Returns 304 (empty body) when the client's If-None-Match matches the ETag
+        $response->isNotModified($request);
+
+        return $response;
     }
 
     public function store(StoreUpdateCustomerRequest $request)

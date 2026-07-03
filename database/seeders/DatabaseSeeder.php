@@ -12,10 +12,15 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        $this->call(OrganizationsTableSeeder::class);
         $this->call(RolesTableSeeder::class);
         $this->call(UsersTableSeeder::class);
         $this->call(MenusTableSeeder::class);
+        $this->call(AdminPermissionsSeeder::class);
         $this->call([SuppliersTableSeeder::class,]);
         $this->call([CustomersTableSeeder::class,]);
+
+        // Padrões do sistema para o módulo de ONG / abrigo (idempotente).
+        $this->call(DefaultLookupsSeeder::class);
     }
 }
