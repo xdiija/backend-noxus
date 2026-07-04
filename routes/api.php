@@ -1,13 +1,16 @@
 <?php
 
-use App\Http\Controllers\{
-    AuthController,
-    CustomerController,
-    SupplierController,
-    MenuController,
-    RoleController,
-    UserController,
-};
+use App\Http\Controllers\AnimalSizeController;
+use App\Http\Controllers\AnimalStatusController;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\BreedController;
+use App\Http\Controllers\CustomerController;
+use App\Http\Controllers\MenuController;
+use App\Http\Controllers\RoleController;
+use App\Http\Controllers\SpeciesController;
+use App\Http\Controllers\SupplierController;
+use App\Http\Controllers\TagController;
+use App\Http\Controllers\UserController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -68,6 +71,50 @@ Route::prefix('suppliers')->middleware('auth')->controller(SupplierController::c
     Route::post('/', 'store')->middleware('check.permissions:suppliers,create');
     Route::put('/{id}/status', 'changeStatus')->middleware('check.permissions:suppliers,update');
     Route::delete('/{id}', 'destroy')->middleware('check.permissions:suppliers,update');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Shelter module — animal reference data (lookups)
+|--------------------------------------------------------------------------
+| Roles/permissions are deferred for shelter resources for now: keep `auth`
+| and add `check.permissions:<route>,<action>` later (see roadmap Module 1).
+|
+| species / breeds are global reference data (read-only, shared by all orgs).
+| animal-sizes / animal-statuses / tags are org-customizable configurable
+| lookups: list returns system defaults + the org's own rows; writes only
+| ever touch the org's own rows.
+*/
+Route::prefix('species')->middleware('auth')->controller(SpeciesController::class)->group(function () {
+    Route::get('/', 'index');
+});
+
+Route::prefix('breeds')->middleware('auth')->controller(BreedController::class)->group(function () {
+    Route::get('/', 'index');
+});
+
+Route::prefix('animal-sizes')->middleware('auth')->controller(AnimalSizeController::class)->group(function () {
+    Route::get('/', 'index');
+    Route::get('/{id}', 'show');
+    Route::post('/', 'store');
+    Route::put('/{id}', 'update');
+    Route::delete('/{id}', 'destroy');
+});
+
+Route::prefix('animal-statuses')->middleware('auth')->controller(AnimalStatusController::class)->group(function () {
+    Route::get('/', 'index');
+    Route::get('/{id}', 'show');
+    Route::post('/', 'store');
+    Route::put('/{id}', 'update');
+    Route::delete('/{id}', 'destroy');
+});
+
+Route::prefix('tags')->middleware('auth')->controller(TagController::class)->group(function () {
+    Route::get('/', 'index');
+    Route::get('/{id}', 'show');
+    Route::post('/', 'store');
+    Route::put('/{id}', 'update');
+    Route::delete('/{id}', 'destroy');
 });
 
 Route::prefix('live-code')->controller(MenuController::class)->group(function () {
