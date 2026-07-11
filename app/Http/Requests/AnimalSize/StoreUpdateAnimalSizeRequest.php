@@ -19,10 +19,9 @@ class StoreUpdateAnimalSizeRequest extends FormRequest
                 'required',
                 'min:2',
                 'max:255',
-                // Unique among this organization's own custom sizes; a custom
-                // entry may still shadow a system default (different org scope).
+                // Unique among the shared global sizes (ADR-0008).
                 Rule::unique('animal_sizes')
-                    ->where('organization_id', auth()->user()?->organization_id)
+                    ->whereNull('organization_id')
                     ->ignore($this->id),
             ],
             'sort_order' => [

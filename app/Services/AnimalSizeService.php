@@ -24,15 +24,16 @@ class AnimalSizeService
 
     public function create(AnimalSizeDTO $dto): AnimalSize
     {
-        // organization_id comes from the authenticated user, never from input.
+        // Noxus-managed global reference (ADR-0008): shared across all orgs, so
+        // no organization_id. The `noxus` middleware guards this endpoint.
         return AnimalSize::create($dto->toArray() + [
-            'organization_id' => $this->organizationId(),
+            'organization_id' => null,
         ]);
     }
 
     public function update(string $id, AnimalSizeDTO $dto): AnimalSize
     {
-        $size = $this->owned()->findOrFail($id);
+        $size = $this->writable()->findOrFail($id);
         $size->update($dto->toArray());
 
         return $size;
@@ -40,12 +41,13 @@ class AnimalSizeService
 
     public function delete(string $id): void
     {
-        $size = $this->owned()->findOrFail($id);
+        $size = $this->writable()->findOrFail($id);
         $size->delete();
     }
 
     /**
-     * Readable rows: system defaults + the org's own entries (ADR-0004).
+     * Readable rows: the shared global entries (organization_id NULL). The
+     * org-scoped predicate is retained defensively (ADR-0004 history).
      */
     private function readable(): Builder
     {
@@ -57,13 +59,12 @@ class AnimalSizeService
     }
 
     /**
-     * Writable rows: only the org's own custom entries. System defaults
-     * (organization_id NULL) are shared and must never be edited or deleted
-     * by a tenant — those queries simply won't match, yielding a 404.
+     * Writable rows: the shared global entries, managed directly by Noxus
+     * (ADR-0008).
      */
-    private function owned(): Builder
+    private function writable(): Builder
     {
-        return AnimalSize::query()->where('organization_id', $this->organizationId());
+        return AnimalSize::query()->whereNull('organization_id');
     }
 
     private function organizationId(): ?int

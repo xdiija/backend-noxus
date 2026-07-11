@@ -5,7 +5,10 @@ vertical slice. Build in dependency order; each module follows
 [`patterns/backend-vertical-slice.md`](patterns/backend-vertical-slice.md)
 (Controller → FormRequest → DTO → Service → Resource → routes → test) with
 `organization_id` scoping in the Service, and reads the relevant specs in
-[`data-model/`](data-model/) + the ADRs in [`decisions/`](decisions/).
+[`data-model/`](data-model/) + the ADRs in [`decisions/`](decisions/). The UI for
+a module follows [`patterns/frontend-vertical-slice.md`](patterns/frontend-vertical-slice.md)
+(Service → List page → Form page → route → menu), including the shelter-module
+deviations (deferred permissions/menu, client-paginated lookup lists).
 
 Migrations already exist (`database/migrations/2026_07_01_*`), so each module is
 "wire the slice + test", not "design the schema".
@@ -16,9 +19,9 @@ Migrations already exist (`database/migrations/2026_07_01_*`), so each module is
 |--------|--------|
 | 0 — Foundation & tenancy | ✅ Done |
 | 1 — Animal reference data (lookups) | ✅ Done |
-| 2 — Animals (core) | ⬜ Next |
-| 3 — Adoptions | ⬜ |
-| 4 — Health | ⬜ |
+| 2 — Animals (core) | ✅ Done |
+| 3 — Adoptions | ✅ Done |
+| 4 — Health | ⬜ Next |
 | 5 — Fostering & volunteers | ⬜ |
 | 6 — Finance | ⬜ |
 | 7 — Cross-cutting (documents, audit) | ⬜ |
@@ -43,19 +46,51 @@ for the tables the Animal form depends on. Configurable lookups serve the
 - **Testable outcome:** `GET /species`, `/breeds?species_id=`, `/animal-sizes`,
   `/animal-statuses`, `/tags` return the seeded defaults (+ org customs).
 - Start with `species` + `breeds` (dependency-free), then the configurable
-  lookups. Global reference (`species`, `breeds`) is shared (no org column).
+  lookups. `species` is global read-only reference (no CRUD). `breeds`,
+  `animal_sizes`, `animal_statuses`, `tags` are **Noxus-managed global lookups**:
+  full CRUD, but only Noxus users write (the `noxus` middleware); all rows are
+  `NULL`-org and every tenant reads the same list — see
+  [ADR-0008](decisions/0008-noxus-managed-global-lookups.md).
 
-## Module 2 — Animals (core) ⬜
-Animal CRUD (org-scoped); `age` accessor from `estimated_birth_date` (ADR-0006);
-microchip uniqueness; neuter fields; `rescue` 1:1 intake (ADR-0003); status change
-writes `animal_status_history`. Optional sub-step: `animal_images`, `animal_tags`.
-Tables: `animals`, `rescues`, `animal_status_history` (+ images/tags).
+## Module 2 — Animals (core) ✅
+Animal CRUD (org-scoped, `suppliers` pattern); `age` accessor derived from
+`estimated_birth_date` (ADR-0006); global microchip uniqueness; neuter fields;
+`rescue` 1:1 intake nested in the Animal payload (ADR-0003); status changes (on
+create, on update, and via `PUT /animals/{id}/status`) write an
+`animal_status_history` row through `AnimalService::recordStatusChange`.
+`animal_tags` synced from the form. `animal_images`: photo upload/gallery on
+MinIO (S3), **presigned-private** — nested `animals/{animal}/images` routes,
+stored via the `s3` disk, served through short-lived signed URLs generated on
+the `s3_public` disk (see [[minio-presigned-image-storage]]).
+Menu: **Abrigo** group → **Animais** (`AnimalMenusSeeder`, Admin granted full
+access; Noxus bypasses). Covered by `tests/Feature/AnimalTest.php` and
+`tests/Feature/AnimalImageTest.php`.
+Tables: `animals`, `rescues`, `animal_status_history`, `animal_tags`,
+`animal_images`.
 
-## Module 3 — Adoptions ⬜
-Adopters CRUD; Adoptions with adopt/return/cancel and the "one active adoption per
-animal" rule (ADR-0002); syncs animal status; follow-ups.
+## Module 3 — Adoptions ✅
+Adopters CRUD (org-scoped, `suppliers` pattern; `cpf` unique per org). Adoptions
+(org-scoped) with the adopt/return/cancel workflow: `POST /adoptions` (adopt),
+`PUT /adoptions/{id}/return`, `PUT /adoptions/{id}/cancel`, plus edit/list/show.
+The "one active adoption per animal" rule (ADR-0002) is enforced in
+`AdoptionService` (Pendente/Concluída with no `return_date` block a new one); each
+transition syncs the animal's status (Adotado / Devolvido / Disponível) by
+delegating to `AnimalService::changeStatus`, which writes the
+`animal_status_history` row. Follow-ups are nested under an adoption
+(`adoptions/{adoption}/follow-ups`), scoped via the parent. `adoption_statuses`
+and `adoption_follow_up_statuses` are exposed as read-only lookup endpoints
+(system defaults + org's own) for the forms.
+Menu: **Abrigo** group → **Adotantes** (`/adopters`) + **Adoções** (`/adoptions`)
+(`AdoptionMenusSeeder`, Admin granted full access; the nested follow-up and
+status-lookup routes reuse the `adoptions` grant). Covered by
+`tests/Feature/AdopterTest.php`, `AdoptionTest.php`, `AdoptionFollowUpTest.php`.
 Tables: `adopters`, `adoptions`, `adoption_statuses`, `adoption_follow_ups`,
 `adoption_follow_up_statuses`.
+Frontend: `AdoptersPage`/`AdoptersForm` (CPF/phone masks) and
+`AdoptionsPage`/`AdoptionsForm` (searchable animal/adopter selects, nested
+follow-ups in edit mode); return/cancel are row actions on the list
+(`ReturnAdoptionDialog` + the shared `SelectNotesDialog`). Menus render from
+`getMenus()` after re-seeding + re-login.
 
 ## Module 4 — Health ⬜
 Health records; vaccine catalog + applied doses; medication catalog + courses;
@@ -81,8 +116,14 @@ Tables: `documents`, `audit_logs`.
 - New resources are **organization-scoped** in the Service (reads filtered by
   `organization_id`; org set server-side on create, never from request input).
   Follow the `suppliers` slice — it's the reference implementation.
-- Roles/permissions gating is **deferred** for shelter resources for now: keep the
-  `auth` middleware on routes; add `check.permissions:<route>,<action>` later.
-  (Permission identity = menu route without the leading slash.)
-- When adding a new permission-guarded resource later, its `check.permissions`
-  arg must equal its route without the slash (single-segment routes only).
+- **Menus are DB-backed and permission-gated.** Every navigable resource gets a
+  `menus` row + `role_menu` grants (seeded), and every route is authorized with
+  `check.permissions:<route>,<action>` (`view`/`create`/`update`). Never hardcode
+  nav in the frontend. The `check.permissions` arg = the route without its
+  leading slash (single-segment routes). See the Menu conventions in
+  [`patterns/frontend-vertical-slice.md`](patterns/frontend-vertical-slice.md).
+- **Global "settings-like" resources live under the "Configurações" menu** —
+  especially global reference data that is *not* org-scoped (the Module 1
+  lookups, and future ones like them): seeded as children of "Configurações",
+  `can_view` for all roles, writes Noxus-only (ADR-0008). Org-scoped resources
+  go under their own domain menus.

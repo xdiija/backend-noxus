@@ -2,10 +2,10 @@
 
 namespace App\Http\Requests\Customer;
 
-use App\Helpers\PhoneHelper;
 use App\Helpers\CpfHelper;
-use App\Rules\PhoneRule;
+use App\Helpers\PhoneHelper;
 use App\Rules\CpfRule;
+use App\Rules\PhoneRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -22,30 +22,30 @@ class StoreUpdateCustomerRequest extends FormRequest
             'name' => [
                 'required',
                 'min:3',
-                'max:255'
+                'max:255',
             ],
             'email' => [
                 'email',
                 'max:255',
-                Rule::unique('customers')->ignore($this->id)
+                Rule::unique('customers')->ignore($this->id),
             ],
             'cpf' => [
                 'required',
                 'max:50',
                 new CpfRule,
-                Rule::unique('customers')->ignore($this->id)
+                Rule::unique('customers')->ignore($this->id),
             ],
             'phone_1' => [
-                new PhoneRule
+                new PhoneRule,
             ],
             'phone_2' => [
-                new PhoneRule
+                new PhoneRule,
             ],
             'status' => [
                 'required',
                 'integer',
-                'in:1,2'
-            ]
+                'in:1,2',
+            ],
         ];
 
         return $rules;
@@ -58,7 +58,7 @@ class StoreUpdateCustomerRequest extends FormRequest
             'phone_2' => PhoneHelper::sanitize($this->phone_2),
             'cpf' => CpfHelper::sanitize($this->cpf),
         ]);
-    }    
+    }
 
     public function messages(): array
     {

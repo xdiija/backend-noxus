@@ -26,8 +26,9 @@ class AnimalStatusService
     public function create(AnimalStatusDTO $dto): AnimalStatus
     {
         return DB::transaction(function () use ($dto) {
+            // Noxus-managed global reference (ADR-0008): no organization_id.
             $status = AnimalStatus::create($dto->toArray() + [
-                'organization_id' => $this->organizationId(),
+                'organization_id' => null,
             ]);
 
             $this->enforceSingleDefault($status);
@@ -39,7 +40,7 @@ class AnimalStatusService
     public function update(string $id, AnimalStatusDTO $dto): AnimalStatus
     {
         return DB::transaction(function () use ($id, $dto) {
-            $status = $this->owned()->findOrFail($id);
+            $status = $this->writable()->findOrFail($id);
             $status->update($dto->toArray());
 
             $this->enforceSingleDefault($status);
@@ -50,13 +51,13 @@ class AnimalStatusService
 
     public function delete(string $id): void
     {
-        $status = $this->owned()->findOrFail($id);
+        $status = $this->writable()->findOrFail($id);
         $status->delete();
     }
 
     /**
-     * At most one org-owned status may be the default. When one is marked, clear
-     * the flag on the org's other statuses. System defaults are untouched.
+     * At most one global status may be the default. When one is marked, clear
+     * the flag on the other global statuses.
      */
     private function enforceSingleDefault(AnimalStatus $status): void
     {
@@ -64,14 +65,15 @@ class AnimalStatusService
             return;
         }
 
-        $this->owned()
+        $this->writable()
             ->where('id', '!=', $status->id)
             ->where('is_default', true)
             ->update(['is_default' => false]);
     }
 
     /**
-     * Readable rows: system defaults + the org's own entries (ADR-0004).
+     * Readable rows: the shared global entries (organization_id NULL). The
+     * org-scoped predicate is retained defensively (ADR-0004 history).
      */
     private function readable(): Builder
     {
@@ -83,12 +85,12 @@ class AnimalStatusService
     }
 
     /**
-     * Writable rows: only the org's own custom entries. System defaults
-     * (organization_id NULL) are shared and can't be edited or deleted.
+     * Writable rows: the shared global entries, managed directly by Noxus
+     * (ADR-0008).
      */
-    private function owned(): Builder
+    private function writable(): Builder
     {
-        return AnimalStatus::query()->where('organization_id', $this->organizationId());
+        return AnimalStatus::query()->whereNull('organization_id');
     }
 
     private function organizationId(): ?int

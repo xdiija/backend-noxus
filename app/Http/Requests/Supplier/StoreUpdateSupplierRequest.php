@@ -22,16 +22,16 @@ class StoreUpdateSupplierRequest extends FormRequest
             'nome_fantasia' => [
                 'required',
                 'min:3',
-                'max:255'
+                'max:255',
             ],
             'razao_social' => [
                 'required',
                 'min:3',
-                'max:255'
+                'max:255',
             ],
             'inscricao_estadual' => [
                 'nullable',
-                'max:50'
+                'max:50',
             ],
             'email' => [
                 'nullable',
@@ -39,7 +39,7 @@ class StoreUpdateSupplierRequest extends FormRequest
                 'max:255',
                 Rule::unique('suppliers')
                     ->where('organization_id', auth()->user()?->organization_id)
-                    ->ignore($this->id)
+                    ->ignore($this->id),
             ],
             'cnpj' => [
                 'required',
@@ -47,21 +47,21 @@ class StoreUpdateSupplierRequest extends FormRequest
                 new CnpjRule,
                 Rule::unique('suppliers')
                     ->where('organization_id', auth()->user()?->organization_id)
-                    ->ignore($this->id)
+                    ->ignore($this->id),
             ],
             'phone_1' => [
                 'nullable',
-                new PhoneRule
+                new PhoneRule,
             ],
             'phone_2' => [
                 'nullable',
-                new PhoneRule
+                new PhoneRule,
             ],
             'status' => [
                 'required',
                 'integer',
-                'in:0,1'
-            ]
+                'in:0,1',
+            ],
         ];
     }
 

@@ -15,7 +15,7 @@ class IndexUsersRequest extends FormRequest
     {
         return [
             'per_page' => ['sometimes', 'integer', 'min:1', 'max:100'],
-            'filter'   => ['sometimes', 'string', 'max:255'],
+            'filter' => ['sometimes', 'string', 'max:255'],
         ];
     }
 
@@ -23,7 +23,7 @@ class IndexUsersRequest extends FormRequest
     {
         $this->merge([
             'per_page' => $this->input('per_page', 10),
-            'filter'   => $this->input('filter', ''),
+            'filter' => $this->input('filter', ''),
         ]);
     }
 
@@ -31,10 +31,10 @@ class IndexUsersRequest extends FormRequest
     {
         return [
             'per_page.integer' => 'O campo por página deve ser um número inteiro.',
-            'per_page.min'     => 'O campo por página deve ser no mínimo 1.',
-            'per_page.max'     => 'O campo por página não pode ser maior que 100.',
-            'filter.string'    => 'O campo filtro deve ser um texto.',
-            'filter.max'       => 'O campo filtro não pode ter mais de 255 caracteres.',
+            'per_page.min' => 'O campo por página deve ser no mínimo 1.',
+            'per_page.max' => 'O campo por página não pode ser maior que 100.',
+            'filter.string' => 'O campo filtro deve ser um texto.',
+            'filter.max' => 'O campo filtro não pode ter mais de 255 caracteres.',
         ];
     }
 }

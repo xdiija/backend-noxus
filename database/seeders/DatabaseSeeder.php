@@ -16,9 +16,12 @@ class DatabaseSeeder extends Seeder
         $this->call(RolesTableSeeder::class);
         $this->call(UsersTableSeeder::class);
         $this->call(MenusTableSeeder::class);
+        $this->call(ShelterMenusSeeder::class);
+        $this->call(AnimalMenusSeeder::class);
+        $this->call(AdoptionMenusSeeder::class);
         $this->call(AdminPermissionsSeeder::class);
-        $this->call([SuppliersTableSeeder::class,]);
-        $this->call([CustomersTableSeeder::class,]);
+        $this->call([SuppliersTableSeeder::class]);
+        $this->call([CustomersTableSeeder::class]);
 
         // Padrões do sistema para o módulo de ONG / abrigo (idempotente).
         $this->call(DefaultLookupsSeeder::class);

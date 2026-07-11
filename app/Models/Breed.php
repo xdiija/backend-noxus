@@ -10,6 +10,7 @@ class Breed extends Model
     protected $table = 'breeds';
 
     protected $fillable = [
+        'organization_id',
         'species_id',
         'name',
     ];

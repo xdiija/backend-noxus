@@ -18,36 +18,36 @@ class StoreUpdateUserRequestRequest extends FormRequest
             'name' => [
                 'required',
                 'min:3',
-                'max:255'
+                'max:255',
             ],
             'email' => [
                 'required',
                 'email',
                 'max:255',
-                Rule::unique('users')->ignore($this->id)
+                Rule::unique('users')->ignore($this->id),
             ],
             'password' => [
                 'required',
                 'min:6',
-                'max:100'
+                'max:100',
             ],
             'status' => [
                 'required',
                 'integer',
-                'in:1,2'
+                'in:1,2',
             ],
             'role' => [
                 'required',
                 'integer',
-                'exists:roles,id'
-            ]
+                'exists:roles,id',
+            ],
         ];
 
-        if($this->method() == 'PATCH' || $this->method() == 'PUT'){
+        if ($this->method() == 'PATCH' || $this->method() == 'PUT') {
             $rules['password'] = [
                 'nullable',
                 'min:6',
-                'max:100'
+                'max:100',
             ];
         }
 
@@ -56,8 +56,6 @@ class StoreUpdateUserRequestRequest extends FormRequest
 
     /**
      * Get custom messages for validator errors.
-     *
-     * @return array
      */
     public function messages(): array
     {

@@ -18,7 +18,7 @@ class UserService
     {
         $query = $this->visibleQuery();
 
-        if (!empty($filter)) {
+        if (! empty($filter)) {
             $query->where('name', 'like', "%{$filter}%");
         }
 
@@ -77,7 +77,7 @@ class UserService
 
         $user = User::findOrFail($id);
 
-        if (!Hash::check($data['old_password'], $user->password)) {
+        if (! Hash::check($data['old_password'], $user->password)) {
             throw new InvalidPasswordChangeException('old_password', 'Senha antiga incorreta!');
         }
 

@@ -19,37 +19,37 @@ class StoreUpdateMenuRequest extends FormRequest
                 'required',
                 'min:3',
                 'max:255',
-                Rule::unique('menus')->whereNull('deleted_at')->ignore($this->id)
+                Rule::unique('menus')->whereNull('deleted_at')->ignore($this->id),
             ],
             'route' => [
                 // Backs check.permissions:<route-without-slash>,<action> for leaf menus.
                 'nullable',
                 'string',
                 'max:255',
-                Rule::unique('menus')->whereNull('deleted_at')->ignore($this->id)
+                Rule::unique('menus')->whereNull('deleted_at')->ignore($this->id),
             ],
             'icon' => [
                 'required',
                 'string',
-                'max:255'
+                'max:255',
             ],
             'parent_id' => [
                 'nullable',
                 'integer',
-                'exists:menus,id'
+                'exists:menus,id',
             ],
             'order' => [
                 'required',
-                'integer'
+                'integer',
             ],
             'status' => [
                 'required',
                 'integer',
-                'in:1,2'
+                'in:1,2',
             ],
             'exclusive_noxus' => [
                 'required',
-                'boolean'
+                'boolean',
             ],
         ];
 
@@ -75,7 +75,7 @@ class StoreUpdateMenuRequest extends FormRequest
             'status.integer' => 'O campo status deve ser um número inteiro.',
             'status.in' => 'O campo status deve ser 1 ou 2.',
             'exclusive_noxus.required' => 'O campo exclusive_noxus é obrigatório.',
-            'exclusive_noxus.boolean' => 'O campo exclusive_noxus deve ser um valor booleano.'
+            'exclusive_noxus.boolean' => 'O campo exclusive_noxus deve ser um valor booleano.',
         ];
     }
 }

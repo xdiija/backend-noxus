@@ -24,15 +24,17 @@ class TagService
 
     public function create(TagDTO $dto): Tag
     {
-        // organization_id comes from the authenticated user, never from input.
+        // Noxus-managed global reference (ADR-0008): rows are shared across all
+        // orgs, so they carry no organization_id. The `noxus` middleware ensures
+        // only system operators reach this.
         return Tag::create($dto->toArray() + [
-            'organization_id' => $this->organizationId(),
+            'organization_id' => null,
         ]);
     }
 
     public function update(string $id, TagDTO $dto): Tag
     {
-        $tag = $this->owned()->findOrFail($id);
+        $tag = $this->writable()->findOrFail($id);
         $tag->update($dto->toArray());
 
         return $tag;
@@ -40,12 +42,14 @@ class TagService
 
     public function delete(string $id): void
     {
-        $tag = $this->owned()->findOrFail($id);
+        $tag = $this->writable()->findOrFail($id);
         $tag->delete();
     }
 
     /**
-     * Readable rows: system defaults + the org's own entries (ADR-0004).
+     * Readable rows: the shared global entries (organization_id NULL). The
+     * org-scoped predicate is retained defensively in case per-org rows ever
+     * exist again (ADR-0004 history).
      */
     private function readable(): Builder
     {
@@ -57,12 +61,12 @@ class TagService
     }
 
     /**
-     * Writable rows: only the org's own custom entries. System defaults
-     * (organization_id NULL) are shared and can't be edited or deleted.
+     * Writable rows: the shared global entries. Noxus manages these directly
+     * (ADR-0008); there are no org-owned tags to scope to.
      */
-    private function owned(): Builder
+    private function writable(): Builder
     {
-        return Tag::query()->where('organization_id', $this->organizationId());
+        return Tag::query()->whereNull('organization_id');
     }
 
     private function organizationId(): ?int

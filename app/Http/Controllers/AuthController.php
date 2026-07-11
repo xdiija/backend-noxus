@@ -2,14 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Support\Facades\Auth;
-use App\Http\Controllers\Controller;
-use App\Services\PermissionService;
 use App\Enums\Status;
+use App\Services\PermissionService;
 
 class AuthController extends Controller
 {
     protected MenuController $menuController;
+
     /**
      * Create a new AuthController instance.
      *
@@ -33,8 +32,8 @@ class AuthController extends Controller
         if (! $token = auth()->attempt($credentials)) {
             return response()->json(['error' => 'Unauthorized'], 401);
         }
-        
-        if(auth()->user()->status != Status::ACTIVE->value){
+
+        if (auth()->user()->status != Status::ACTIVE->value) {
             return response()->json(['error' => 'inactive_user', 'message' => 'Usuário inativo.'], 401);
         }
 
@@ -48,6 +47,7 @@ class AuthController extends Controller
         ];
         $menus = $this->menuController->getByRoles()->resolve();
         $permissions = PermissionService::permissionsMap();
+
         return $this->respondWithToken($token, $user, $menus, $permissions);
     }
 
@@ -59,6 +59,7 @@ class AuthController extends Controller
     public function me()
     {
         $user = auth()->user();
+
         return response()->json([
             'id' => $user->id,
             'name' => $user->name,
@@ -80,9 +81,9 @@ class AuthController extends Controller
     public function logout()
     {
         $cookie = cookie()->forget('token');
-        
+
         auth()->logout();
-        
+
         return response()
             ->json(['message' => 'Successfully logged out'])
             ->withCookie($cookie);
@@ -101,21 +102,20 @@ class AuthController extends Controller
     /**
      * Get the token array structure.
      *
-     * @param  string $token
-     *
+     * @param  string  $token
      * @return \Illuminate\Http\JsonResponse
      */
     protected function respondWithToken($token, $user = [], $menus = [], $permissions = [])
     {
         $cookie = cookie(
-            'token', 
-            $token, 
+            'token',
+            $token,
             auth()->factory()->getTTL(), // minutes
-            null, 
-            null, 
+            null,
+            null,
             true,  // Secure
             true,  // HttpOnly
-            false, 
+            false,
             'None'
         );
 
@@ -124,9 +124,8 @@ class AuthController extends Controller
                 'user' => $user,
                 'menus' => $menus,
                 'permissions' => $permissions,
-                'expires_in' => auth()->factory()->getTTL() * 60
+                'expires_in' => auth()->factory()->getTTL() * 60,
             ])
             ->withCookie($cookie);
     }
-
 }

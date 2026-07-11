@@ -7,11 +7,17 @@ tenant_scoped: mixed
 
 Two kinds of reference tables:
 
-- **Global reference** — shared, not org-scoped: `species`, `breeds`,
-  `vaccines`, `medications`.
-- **Configurable lookups** — org-customizable with `organization_id` nullable
-  (`NULL` = system default, shared by all orgs; non-null = one org's custom
+- **Global reference** — shared, not org-scoped: `species`, `vaccines`,
+  `medications`.
+- **Configurable lookups** — `organization_id` nullable (`NULL` = shared global
   entry). See ADR-0004.
+  - **Noxus-managed global** (`breeds`, `animal_sizes`, `animal_statuses`,
+    `tags`): a single curated list per lookup; only Noxus users create/edit/
+    delete, all rows are `NULL`-org, every tenant reads the same list
+    ([ADR-0008](../decisions/0008-noxus-managed-global-lookups.md)).
+  - Lookups for later modules (`adoption_statuses`, `donation_types`,
+    `expense_categories`, `adoption_follow_up_statuses`) keep the ADR-0004
+    per-org model for now; revisit when their module is built.
 
 Seeded by `DefaultLookupsSeeder` (idempotent). Defaults below are Portuguese
 (user-facing); table/column names stay English.
@@ -65,14 +71,16 @@ Free-form animal labels. Columns: `organization_id?`, `name`.
 Defaults: Necessidades Especiais, Idoso, Dupla Inseparável, Sociável com
 Crianças, Sociável com Outros Animais, Resgate Recente.
 
+### `breeds`
+Columns: `organization_id?`, `species_id`, `name`, unique
+`(organization_id, species_id, name)`. Org-customizable (ADR-0004 amendment):
+`NULL` org = seeded system default; a non-null value = one org's custom breed.
+Defaults: common BR breeds per species; `SRD (Vira-lata)` = mixed breed.
+
 ## Global reference
 
 ### `species`
 Columns: `name` (unique). Defaults: Cachorro, Gato.
-
-### `breeds`
-Columns: `species_id`, `name`, unique `(species_id, name)`.
-Defaults: common BR breeds per species; `SRD (Vira-lata)` = mixed breed.
 
 ### `vaccines`
 Columns: `name` (unique).

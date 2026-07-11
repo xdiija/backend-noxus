@@ -76,7 +76,7 @@ class MenuService
             }])
             ->orderBy('order');
 
-        if (!PermissionService::isNoxusUser()) {
+        if (! PermissionService::isNoxusUser()) {
             $query->where('exclusive_noxus', false);
         }
 
@@ -94,7 +94,7 @@ class MenuService
             'parent',
             'roles' => function ($query) {
                 $query->withPivot(['can_view', 'can_create', 'can_update']);
-            }
+            },
         ])->findOrFail($id);
     }
 

@@ -44,7 +44,7 @@ class RoleService
             $query->withPivot(['can_view', 'can_create', 'can_update']);
         }]);
 
-        if (!PermissionService::isNoxusUser()) {
+        if (! PermissionService::isNoxusUser()) {
             if (PermissionService::isAdminUser()) {
                 $query->where('id', '!=', Role::NOXUS_ROLE);
             } else {
@@ -111,7 +111,7 @@ class RoleService
     private function syncPermissions(Role $role, RoleDTO $dto): void
     {
         $permissions = $this->permissionService->preparePermissions(
-            $dto->permissions, new Menu(), 'menu_id'
+            $dto->permissions, new Menu, 'menu_id'
         );
         $role->menus()->sync($permissions);
     }

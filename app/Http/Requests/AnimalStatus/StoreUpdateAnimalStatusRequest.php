@@ -19,9 +19,9 @@ class StoreUpdateAnimalStatusRequest extends FormRequest
                 'required',
                 'min:2',
                 'max:255',
-                // Unique among this organization's own custom statuses.
+                // Unique among the shared global statuses (ADR-0008).
                 Rule::unique('animal_statuses')
-                    ->where('organization_id', auth()->user()?->organization_id)
+                    ->whereNull('organization_id')
                     ->whereNull('deleted_at')
                     ->ignore($this->id),
             ],

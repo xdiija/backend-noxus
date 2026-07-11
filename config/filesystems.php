@@ -56,6 +56,22 @@ return [
             'throw' => false,
         ],
 
+        // Same bucket/credentials as `s3`, but pointed at the browser-facing
+        // endpoint. Used ONLY to generate presigned URLs (temporaryUrl): the
+        // SDK signs the public host so links resolve from the user's machine,
+        // while all server-side put/delete still goes through the `s3` disk
+        // over the internal docker network.
+        's3_public' => [
+            'driver' => 's3',
+            'key' => env('AWS_ACCESS_KEY_ID'),
+            'secret' => env('AWS_SECRET_ACCESS_KEY'),
+            'region' => env('AWS_DEFAULT_REGION'),
+            'bucket' => env('AWS_BUCKET'),
+            'endpoint' => env('AWS_ENDPOINT_PUBLIC', env('AWS_ENDPOINT')),
+            'use_path_style_endpoint' => env('AWS_USE_PATH_STYLE_ENDPOINT', false),
+            'throw' => false,
+        ],
+
     ],
 
     /*

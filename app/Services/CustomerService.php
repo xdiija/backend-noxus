@@ -12,7 +12,7 @@ class CustomerService
     {
         $query = Customer::query();
 
-        if (!empty($filter)) {
+        if (! empty($filter)) {
             $query->where('name', 'like', "%{$filter}%");
         }
 

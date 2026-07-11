@@ -19,9 +19,9 @@ class StoreUpdateTagRequest extends FormRequest
                 'required',
                 'min:2',
                 'max:255',
-                // Unique among this organization's own custom tags.
+                // Unique among the shared global tags (ADR-0008).
                 Rule::unique('tags')
-                    ->where('organization_id', auth()->user()?->organization_id)
+                    ->whereNull('organization_id')
                     ->ignore($this->id),
             ],
         ];

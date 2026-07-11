@@ -13,12 +13,12 @@ class SupplierService
     {
         $query = $this->scoped();
 
-        if (!empty($filter)) {
+        if (! empty($filter)) {
             // Group the OR-filter so it can't escape the organization scope.
             $query->where(function (Builder $q) use ($filter) {
                 $q->where('nome_fantasia', 'like', "%{$filter}%")
-                  ->orWhere('razao_social', 'like', "%{$filter}%")
-                  ->orWhere('cnpj', 'like', "%{$filter}%");
+                    ->orWhere('razao_social', 'like', "%{$filter}%")
+                    ->orWhere('cnpj', 'like', "%{$filter}%");
             });
         }
 

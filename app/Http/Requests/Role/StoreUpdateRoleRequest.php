@@ -20,33 +20,33 @@ class StoreUpdateRoleRequest extends FormRequest
                 'required',
                 'min:3',
                 'max:255',
-                Rule::unique('roles')->whereNull('deleted_at')->ignore($this->id)
+                Rule::unique('roles')->whereNull('deleted_at')->ignore($this->id),
             ],
             'status' => [
                 'required',
                 'integer',
-                'in:1,2'
+                'in:1,2',
             ],
             'permissions' => [
                 'required',
-                'array'
+                'array',
             ],
             'permissions.*.menu_id' => [
                 'required',
                 'integer',
-                'exists:menus,id'
+                'exists:menus,id',
             ],
             'permissions.*.can_view' => [
                 'required',
-                'boolean'
+                'boolean',
             ],
             'permissions.*.can_create' => [
                 'required',
-                'boolean'
+                'boolean',
             ],
             'permissions.*.can_update' => [
                 'required',
-                'boolean'
+                'boolean',
             ],
         ];
 
@@ -63,7 +63,7 @@ class StoreUpdateRoleRequest extends FormRequest
                         || filter_var($permission['can_update'] ?? false, FILTER_VALIDATE_BOOLEAN);
                 });
 
-            if (!$hasEnabledPermission) {
+            if (! $hasEnabledPermission) {
                 $validator->errors()->add(
                     'permissions',
                     'O perfil deve ter pelo menos uma permissão habilitada.'

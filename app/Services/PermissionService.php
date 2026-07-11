@@ -4,8 +4,8 @@ namespace App\Services;
 
 use App\Enums\Status;
 use App\Models\Menu;
-use App\Models\User;
 use App\Models\Role;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 
@@ -89,6 +89,6 @@ class PermissionService
 
     public static function isRegularUser(): bool
     {
-        return !self::isNoxusUser() && !self::isAdminUser();
+        return ! self::isNoxusUser() && ! self::isAdminUser();
     }
 }

@@ -49,8 +49,9 @@ class BreedsTableSeeder extends Seeder
             }
 
             foreach ($names as $name) {
+                // organization_id = null => system default, shared by all orgs
                 DB::table('breeds')->updateOrInsert(
-                    ['species_id' => $speciesId, 'name' => $name],
+                    ['organization_id' => null, 'species_id' => $speciesId, 'name' => $name],
                     ['updated_at' => $now, 'created_at' => $now],
                 );
             }

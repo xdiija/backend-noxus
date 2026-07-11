@@ -14,6 +14,8 @@ class BreedResource extends JsonResource
             'name' => $this->name,
             'species_id' => $this->species_id,
             'species' => new SpeciesResource($this->whenLoaded('species')),
+            // false = system default (read-only for the org); true = org's own.
+            'is_custom' => $this->organization_id !== null,
         ];
     }
 }
