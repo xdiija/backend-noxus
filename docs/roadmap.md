@@ -21,8 +21,8 @@ Migrations already exist (`database/migrations/2026_07_01_*`), so each module is
 | 1 — Animal reference data (lookups) | ✅ Done |
 | 2 — Animals (core) | ✅ Done |
 | 3 — Adoptions | ✅ Done |
-| 4 — Health | ⬜ Next |
-| 5 — Fostering & volunteers | ⬜ |
+| 4 — Health | 🟨 Backend done — UI pending |
+| 5 — Fostering & volunteers | ✅ Done |
 | 6 — Finance | ⬜ |
 | 7 — Cross-cutting (documents, audit) | ⬜ |
 
@@ -92,15 +92,51 @@ follow-ups in edit mode); return/cancel are row actions on the list
 (`ReturnAdoptionDialog` + the shared `SelectNotesDialog`). Menus render from
 `getMenus()` after re-seeding + re-login.
 
-## Module 4 — Health ⬜
-Health records; vaccine catalog + applied doses; medication catalog + courses;
-appointments; surgeries (keep `animals.neutered` in sync with a castration).
+## Module 4 — Health 🟨 (backend done, UI pending)
+Clinical history nested under an animal (follow-ups/images pattern): five
+resources under `animals/{animal}/…` — `health-records`, `vaccines` (applied
+doses), `medications` (courses, `end_date` null = ongoing), `appointments`,
+`surgeries` — each with index/store/update/destroy, org scoping enforced in
+the Service via the org-scoped parent animal, and `organization_id` set from
+the animal where the table carries it. The routes reuse the `animals`
+permission grant (`view` to read, `update` to write) — no new menus.
+`vaccines` and `medications` catalogs are global reference data like species:
+read-only `GET /vaccines` + `GET /medications` (seeded, shared by all orgs).
+Invariant (health.md): recording a castration keeps the animal in sync —
+`StoreUpdateSurgeryRequest` accepts a non-persisted `is_castration` flag and
+`SurgeryService` sets `animals.neutered = true` + `neuter_date = surgery_date`
+in the same transaction (never un-neuters). Covered by
+`tests/Feature/HealthRecordTest.php`, `AnimalVaccineTest.php`,
+`AnimalMedicationTest.php`, `AppointmentTest.php`, `SurgeryTest.php`.
 Tables: `health_records`, `vaccines`, `animal_vaccines`, `medications`,
 `animal_medications`, `appointments`, `surgeries`.
+**Pending:** frontend (health sections on the Animal form/detail per
+`patterns/frontend-vertical-slice.md`).
 
-## Module 5 — Fostering & volunteers ⬜
-Volunteers CRUD; foster homes CRUD; foster placements (open/close stay, capacity).
+## Module 5 — Fostering & volunteers ✅
+Volunteers CRUD (org-scoped, `suppliers` pattern, active/inactive `status`
+toggle). Foster homes CRUD (org-scoped; list/show expose
+`open_placements_count` so the UI shows occupancy against `capacity`).
+Placements (stays) are nested under their home
+(`foster-homes/{fosterHome}/placements`, follow-ups pattern — org scoping via
+the org-scoped parent, routes reuse the `foster-homes` grant):
+`POST` opens a stay, `PUT /{id}/close` closes it, `PUT /{id}` corrects the
+entry date (animal immutable). `FosterPlacementService` enforces the
+fostering.md invariants — at most one open stay per animal (org-wide) and the
+home's capacity (null = unlimited) — and keeps the animal's status in sync via
+`AnimalService::changeStatus` (+history): open → "Em Lar Temporário"; close →
+"Disponível" **only if** still "Em Lar Temporário" (never clobbers e.g. an
+adoption made from the foster home).
+Menu: **Abrigo** group → **Lares Temporários** (`/foster-homes`) +
+**Voluntários** (`/volunteers`) (`FosteringMenusSeeder`, Admin granted full
+access). Covered by `tests/Feature/VolunteerTest.php`, `FosterHomeTest.php`,
+`FosterPlacementTest.php`.
 Tables: `volunteers`, `foster_homes`, `animal_foster_homes`.
+Frontend: `VolunteersPage`/`VolunteersForm` (phone mask, status toggle) and
+`FosterHomesPage` (occupancy chip) / `FosterHomesForm` (nested stays in edit
+mode: searchable animal select to open a stay, close via
+`ClosePlacementDialog`, delete). Menus render from `getMenus()` after
+re-seeding + re-login.
 
 ## Module 6 — Finance ⬜
 Donors; Donations (typed, in-kind allowed); Expenses (categorized, `paid`).
@@ -109,6 +145,29 @@ Tables: `donors`, `donations`, `donation_types`, `expenses`, `expense_categories
 ## Module 7 — Cross-cutting / system ⬜
 Documents (polymorphic, ADR-0005); Audit logs; dashboard/report endpoints.
 Tables: `documents`, `audit_logs`.
+
+**Dashboard/report endpoints — notes from the `HomePage` charts built ahead of
+this module:** `HomePage.vue` currently computes everything client-side from
+existing CRUD endpoints (animals/adoptions/volunteers), paginating through
+every page with `per_page=100` and aggregating in the browser — workable at
+today's shelter scale but not something to keep scaling. When this module is
+built, prefer dedicated aggregate endpoints over more client-side pagination
+loops, in particular:
+- **Status/species counts** — `HomePage` derives these by fetching every
+  animal; a `GET` that returns pre-aggregated counts (e.g. grouped by
+  `status_id`/`species_id`) avoids pulling full rows just to count them.
+- **Monthly trends** (adoptions per month, rescues vs. adoptions) — currently
+  bucketed client-side from `adoption_date`/`rescue.rescue_date` strings across
+  a full paginated fetch; a real endpoint should accept a date range and
+  return pre-bucketed series server-side.
+- **Upcoming vaccines/appointments due** — not built at all yet. `animal_vaccines`
+  and `appointments` are only reachable per-animal (`animals/{animal}/vaccines`,
+  `animals/{animal}/appointments}`), so there's no way today to ask "what's due
+  across every animal in the org in the next N days." This needs a
+  cross-animal endpoint, not just client aggregation.
+- If status/species/monthly-trend endpoints land, swap `HomePage`'s
+  `fetchAllPages` aggregation for them and delete the client-side grouping
+  logic — it becomes dead weight once the backend does the counting.
 
 ---
 

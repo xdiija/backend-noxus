@@ -7,17 +7,28 @@ use App\Http\Controllers\AdoptionFollowUpStatusController;
 use App\Http\Controllers\AdoptionStatusController;
 use App\Http\Controllers\AnimalController;
 use App\Http\Controllers\AnimalImageController;
+use App\Http\Controllers\AnimalMedicationController;
 use App\Http\Controllers\AnimalSizeController;
 use App\Http\Controllers\AnimalStatusController;
+use App\Http\Controllers\AnimalVaccineController;
+use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BreedController;
 use App\Http\Controllers\CustomerController;
+use App\Http\Controllers\FosterHomeController;
+use App\Http\Controllers\FosterPlacementController;
+use App\Http\Controllers\HealthRecordController;
+use App\Http\Controllers\MedicationController;
 use App\Http\Controllers\MenuController;
+use App\Http\Controllers\OrganizationController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SpeciesController;
 use App\Http\Controllers\SupplierController;
+use App\Http\Controllers\SurgeryController;
 use App\Http\Controllers\TagController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\VaccineController;
+use App\Http\Controllers\VolunteerController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -78,6 +89,22 @@ Route::prefix('suppliers')->middleware('auth')->controller(SupplierController::c
     Route::post('/', 'store')->middleware('check.permissions:suppliers,create');
     Route::put('/{id}/status', 'changeStatus')->middleware('check.permissions:suppliers,update');
     Route::delete('/{id}', 'destroy')->middleware('check.permissions:suppliers,update');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Organizations (tenant management) — Noxus-only
+|--------------------------------------------------------------------------
+| The /organizations menu is exclusive_noxus with NO role_menu grants, so
+| hasPermission() is false for every role and only Noxus (who bypasses
+| check.permissions) gets through. The Service is deliberately not org-scoped.
+*/
+Route::prefix('organizations')->middleware('auth')->controller(OrganizationController::class)->group(function () {
+    Route::get('/', 'index')->middleware('check.permissions:organizations,view');
+    Route::get('/{id}', 'show')->middleware('check.permissions:organizations,view');
+    Route::post('/', 'store')->middleware('check.permissions:organizations,create');
+    Route::put('/{id}', 'update')->middleware('check.permissions:organizations,update');
+    Route::delete('/{id}', 'destroy')->middleware('check.permissions:organizations,update');
 });
 
 /*
@@ -150,6 +177,102 @@ Route::prefix('adoption-statuses')->middleware('auth')->controller(AdoptionStatu
 
 Route::prefix('adoption-follow-up-statuses')->middleware('auth')->controller(AdoptionFollowUpStatusController::class)->group(function () {
     Route::get('/', 'index')->middleware('check.permissions:adoptions,view');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Shelter module — health (Module 4)
+|--------------------------------------------------------------------------
+| Clinical history nested under an animal, like animal images: org scoping is
+| enforced in each Service via the parent animal, and the routes reuse the
+| `animals` permission grant (view to read, update to write) — no separate
+| menu entry. vaccines/medications at the bottom are the global reference
+| catalogs (read-only, shared by all orgs, like species) that the applied-dose
+| and course forms consume.
+*/
+Route::prefix('animals/{animal}/health-records')->middleware('auth')->controller(HealthRecordController::class)->group(function () {
+    Route::get('/', 'index')->middleware('check.permissions:animals,view');
+    Route::post('/', 'store')->middleware('check.permissions:animals,update');
+    Route::put('/{healthRecord}', 'update')->middleware('check.permissions:animals,update');
+    Route::delete('/{healthRecord}', 'destroy')->middleware('check.permissions:animals,update');
+});
+
+// Applied vaccine doses (animal_vaccines).
+Route::prefix('animals/{animal}/vaccines')->middleware('auth')->controller(AnimalVaccineController::class)->group(function () {
+    Route::get('/', 'index')->middleware('check.permissions:animals,view');
+    Route::post('/', 'store')->middleware('check.permissions:animals,update');
+    Route::put('/{vaccine}', 'update')->middleware('check.permissions:animals,update');
+    Route::delete('/{vaccine}', 'destroy')->middleware('check.permissions:animals,update');
+});
+
+// Medication courses (animal_medications).
+Route::prefix('animals/{animal}/medications')->middleware('auth')->controller(AnimalMedicationController::class)->group(function () {
+    Route::get('/', 'index')->middleware('check.permissions:animals,view');
+    Route::post('/', 'store')->middleware('check.permissions:animals,update');
+    Route::put('/{medication}', 'update')->middleware('check.permissions:animals,update');
+    Route::delete('/{medication}', 'destroy')->middleware('check.permissions:animals,update');
+});
+
+Route::prefix('animals/{animal}/appointments')->middleware('auth')->controller(AppointmentController::class)->group(function () {
+    Route::get('/', 'index')->middleware('check.permissions:animals,view');
+    Route::post('/', 'store')->middleware('check.permissions:animals,update');
+    Route::put('/{appointment}', 'update')->middleware('check.permissions:animals,update');
+    Route::delete('/{appointment}', 'destroy')->middleware('check.permissions:animals,update');
+});
+
+// Surgeries keep animals.neutered/neuter_date in sync when a castration is
+// recorded (is_castration flag, handled in SurgeryService).
+Route::prefix('animals/{animal}/surgeries')->middleware('auth')->controller(SurgeryController::class)->group(function () {
+    Route::get('/', 'index')->middleware('check.permissions:animals,view');
+    Route::post('/', 'store')->middleware('check.permissions:animals,update');
+    Route::put('/{surgery}', 'update')->middleware('check.permissions:animals,update');
+    Route::delete('/{surgery}', 'destroy')->middleware('check.permissions:animals,update');
+});
+
+// Global reference catalogs (read-only, shared by all orgs — like species).
+Route::prefix('vaccines')->middleware('auth')->controller(VaccineController::class)->group(function () {
+    Route::get('/', 'index');
+});
+
+Route::prefix('medications')->middleware('auth')->controller(MedicationController::class)->group(function () {
+    Route::get('/', 'index');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Shelter module — fostering & volunteers (Module 5)
+|--------------------------------------------------------------------------
+| Volunteers and foster homes are organization-scoped operational data
+| (suppliers pattern, org set server-side on create). Placements (stays) are
+| nested under their foster home like adoption follow-ups: org scoping is
+| enforced in the Service via the org-scoped parent home, and the routes reuse
+| the `foster-homes` grant. Opening/closing a stay keeps the animal's status in
+| sync (Em Lar Temporário / Disponível) through AnimalService.
+*/
+Route::prefix('volunteers')->middleware('auth')->controller(VolunteerController::class)->group(function () {
+    Route::get('/', 'index')->middleware('check.permissions:volunteers,view');
+    Route::get('/{id}', 'show')->middleware('check.permissions:volunteers,view');
+    Route::post('/', 'store')->middleware('check.permissions:volunteers,create');
+    Route::put('/{id}', 'update')->middleware('check.permissions:volunteers,update');
+    Route::put('/{id}/status', 'changeStatus')->middleware('check.permissions:volunteers,update');
+    Route::delete('/{id}', 'destroy')->middleware('check.permissions:volunteers,update');
+});
+
+Route::prefix('foster-homes')->middleware('auth')->controller(FosterHomeController::class)->group(function () {
+    Route::get('/', 'index')->middleware('check.permissions:foster-homes,view');
+    Route::get('/{id}', 'show')->middleware('check.permissions:foster-homes,view');
+    Route::post('/', 'store')->middleware('check.permissions:foster-homes,create');
+    Route::put('/{id}', 'update')->middleware('check.permissions:foster-homes,update');
+    Route::delete('/{id}', 'destroy')->middleware('check.permissions:foster-homes,update');
+});
+
+// Foster stays (animal_foster_homes), nested under their foster home.
+Route::prefix('foster-homes/{fosterHome}/placements')->middleware('auth')->controller(FosterPlacementController::class)->group(function () {
+    Route::get('/', 'index')->middleware('check.permissions:foster-homes,view');
+    Route::post('/', 'store')->middleware('check.permissions:foster-homes,update');
+    Route::put('/{placement}', 'update')->middleware('check.permissions:foster-homes,update');
+    Route::put('/{placement}/close', 'close')->middleware('check.permissions:foster-homes,update');
+    Route::delete('/{placement}', 'destroy')->middleware('check.permissions:foster-homes,update');
 });
 
 /*

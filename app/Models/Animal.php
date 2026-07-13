@@ -79,6 +79,42 @@ class Animal extends Model
         return $this->belongsToMany(Tag::class, 'animal_tags');
     }
 
+    public function healthRecords(): HasMany
+    {
+        return $this->hasMany(HealthRecord::class);
+    }
+
+    /**
+     * Applied vaccine doses (animal_vaccines), not the global vaccine catalog.
+     */
+    public function vaccines(): HasMany
+    {
+        return $this->hasMany(AnimalVaccine::class);
+    }
+
+    /**
+     * Medication courses (animal_medications), not the global medication catalog.
+     */
+    public function medications(): HasMany
+    {
+        return $this->hasMany(AnimalMedication::class);
+    }
+
+    public function appointments(): HasMany
+    {
+        return $this->hasMany(Appointment::class);
+    }
+
+    public function surgeries(): HasMany
+    {
+        return $this->hasMany(Surgery::class);
+    }
+
+    public function fosterStays(): HasMany
+    {
+        return $this->hasMany(AnimalFosterHome::class);
+    }
+
     /**
      * Age derived from estimated_birth_date (ADR-0006) — never stored, so it
      * can't go stale. Null when the birth date is unknown; the caller decides

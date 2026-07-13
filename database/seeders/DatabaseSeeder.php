@@ -19,11 +19,16 @@ class DatabaseSeeder extends Seeder
         $this->call(ShelterMenusSeeder::class);
         $this->call(AnimalMenusSeeder::class);
         $this->call(AdoptionMenusSeeder::class);
+        $this->call(FosteringMenusSeeder::class);
+        $this->call(OrganizationMenusSeeder::class);
         $this->call(AdminPermissionsSeeder::class);
         $this->call([SuppliersTableSeeder::class]);
         $this->call([CustomersTableSeeder::class]);
 
         // Padrões do sistema para o módulo de ONG / abrigo (idempotente).
         $this->call(DefaultLookupsSeeder::class);
+
+        // Dados de exemplo para desenvolvimento (animais, adoções, saúde).
+        $this->call(DevSampleDataSeeder::class);
     }
 }
