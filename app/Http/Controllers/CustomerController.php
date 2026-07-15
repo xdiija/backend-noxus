@@ -3,8 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\DTOs\Customer\CustomerDTO;
-use App\Http\Requests\Customer\StoreUpdateCustomerRequest;
 use App\Http\Requests\Customer\IndexCustomersRequest;
+use App\Http\Requests\Customer\StoreUpdateCustomerRequest;
 use App\Http\Resources\CustomerResource;
 use App\Services\CustomerService;
 

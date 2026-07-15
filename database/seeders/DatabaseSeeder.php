@@ -20,6 +20,9 @@ class DatabaseSeeder extends Seeder
         $this->call(AnimalMenusSeeder::class);
         $this->call(AdoptionMenusSeeder::class);
         $this->call(FosteringMenusSeeder::class);
+        $this->call(KennelsMenusSeeder::class);
+        $this->call(FinanceMenusSeeder::class);
+        $this->call(SystemMenusSeeder::class);
         $this->call(OrganizationMenusSeeder::class);
         $this->call(AdminPermissionsSeeder::class);
         $this->call([SuppliersTableSeeder::class]);

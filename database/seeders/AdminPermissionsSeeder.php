@@ -10,14 +10,14 @@ class AdminPermissionsSeeder extends Seeder
 {
     /**
      * Grant the Admin role full (view/create/update) permissions on the
-     * users, roles and suppliers menus. Depends on RolesTableSeeder and
+     * users and roles menus. Depends on RolesTableSeeder and
      * MenusTableSeeder having run first. Idempotent per (role, menu).
      */
     public function run(): void
     {
         $now = now();
 
-        $menuRoutes = ['/users', '/roles', '/suppliers'];
+        $menuRoutes = ['/users', '/roles'];
         $menuIds = DB::table('menus')->whereIn('route', $menuRoutes)->pluck('id', 'route');
 
         foreach ($menuRoutes as $route) {

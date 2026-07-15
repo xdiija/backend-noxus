@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\DTOs\Animal\AnimalDTO;
 use App\Models\Animal;
+use App\Models\AnimalStatus;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
@@ -39,7 +40,11 @@ class AnimalService
     {
         // `images` is loaded only here (not in list): each image resolves to a
         // presigned URL, so we generate them for a single animal, not a page.
-        return $this->scoped()->with(self::WITH)->with('images')->findOrFail($id);
+        // The open stays give the Resource the animal's current location
+        // (kennel or foster home).
+        return $this->scoped()->with(self::WITH)
+            ->with(['images', 'openKennelStay.kennel', 'openFosterStay.fosterHome'])
+            ->findOrFail($id);
     }
 
     public function create(AnimalDTO $dto): Animal
@@ -77,6 +82,7 @@ class AnimalService
             // Invariant: write a history row whenever status_id changes.
             if ($animal->status_id !== $previousStatusId) {
                 $this->recordStatusChange($animal, $previousStatusId, $animal->status_id, null);
+                $this->closeKennelStayIfOffSite($animal);
             }
 
             if ($dto->tags !== null) {
@@ -108,6 +114,7 @@ class AnimalService
                 $previousStatusId = $animal->status_id;
                 $animal->update(['status_id' => $statusId]);
                 $this->recordStatusChange($animal, $previousStatusId, $statusId, $notes);
+                $this->closeKennelStayIfOffSite($animal);
             }
 
             return $animal->load(self::WITH);
@@ -118,6 +125,22 @@ class AnimalService
     {
         $animal = $this->scoped()->findOrFail($id);
         $animal->delete();
+    }
+
+    /**
+     * Kennel invariant (kennels.md): moving to a status that means the animal
+     * left the shelter (adopted, fostered, deceased) automatically closes its
+     * open kennel stay. Called from every status-changing path so adoption,
+     * fostering and manual edits all free the kennel; the status-history row
+     * written alongside documents why.
+     */
+    private function closeKennelStayIfOffSite(Animal $animal): void
+    {
+        $statusName = AnimalStatus::query()->whereKey($animal->status_id)->value('name');
+
+        if (in_array($statusName, KennelStayService::OFF_SITE_ANIMAL_STATUSES, true)) {
+            $animal->openKennelStay()->update(['exit_date' => now()->toDateString()]);
+        }
     }
 
     private function recordStatusChange(Animal $animal, ?int $oldStatusId, int $newStatusId, ?string $notes): void

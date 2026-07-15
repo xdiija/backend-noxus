@@ -12,11 +12,22 @@ use App\Http\Controllers\AnimalSizeController;
 use App\Http\Controllers\AnimalStatusController;
 use App\Http\Controllers\AnimalVaccineController;
 use App\Http\Controllers\AppointmentController;
+use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BreedController;
 use App\Http\Controllers\CustomerController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DocumentController;
+use App\Http\Controllers\DonationController;
+use App\Http\Controllers\DonationTypeController;
+use App\Http\Controllers\DonorController;
+use App\Http\Controllers\ExpenseCategoryController;
+use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\FosterHomeController;
 use App\Http\Controllers\FosterPlacementController;
+use App\Http\Controllers\KennelController;
+use App\Http\Controllers\KennelStatusController;
+use App\Http\Controllers\KennelStayController;
 use App\Http\Controllers\HealthRecordController;
 use App\Http\Controllers\MedicationController;
 use App\Http\Controllers\MenuController;
@@ -277,6 +288,87 @@ Route::prefix('foster-homes/{fosterHome}/placements')->middleware('auth')->contr
 
 /*
 |--------------------------------------------------------------------------
+| Shelter module — kennels (Module 8)
+|--------------------------------------------------------------------------
+| Physical kennels and the animal's stay history (where the animal is at).
+| Kennels are organization-scoped operational data (suppliers pattern, org set
+| server-side on create); stays are nested under their kennel like foster
+| placements and reuse the `kennels` grant. Occupancy is derived from open
+| stays (exit_date IS NULL), never stored. Moving an animal to an off-site
+| status (Adotado / Em Lar Temporário / Óbito) closes its open stay through
+| AnimalService. kennel-statuses is a read-only configurable lookup (system
+| defaults + the org's own, ADR-0004) consumed by the kennel form.
+*/
+Route::prefix('kennels')->middleware('auth')->controller(KennelController::class)->group(function () {
+    Route::get('/', 'index')->middleware('check.permissions:kennels,view');
+    Route::get('/{id}', 'show')->middleware('check.permissions:kennels,view');
+    Route::post('/', 'store')->middleware('check.permissions:kennels,create');
+    Route::put('/{id}', 'update')->middleware('check.permissions:kennels,update');
+    Route::delete('/{id}', 'destroy')->middleware('check.permissions:kennels,update');
+});
+
+// Kennel stays (animal_kennel_stays), nested under their kennel.
+Route::prefix('kennels/{kennel}/stays')->middleware('auth')->controller(KennelStayController::class)->group(function () {
+    Route::get('/', 'index')->middleware('check.permissions:kennels,view');
+    Route::post('/', 'store')->middleware('check.permissions:kennels,update');
+    Route::put('/{stay}', 'update')->middleware('check.permissions:kennels,update');
+    Route::put('/{stay}/close', 'close')->middleware('check.permissions:kennels,update');
+    Route::put('/{stay}/transfer', 'transfer')->middleware('check.permissions:kennels,update');
+    Route::delete('/{stay}', 'destroy')->middleware('check.permissions:kennels,update');
+});
+
+Route::prefix('kennel-statuses')->middleware('auth')->controller(KennelStatusController::class)->group(function () {
+    Route::get('/', 'index')->middleware('check.permissions:kennels,view');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Shelter module — finance (Module 6)
+|--------------------------------------------------------------------------
+| Lightweight income/outgoing tracking (ADR-0007): donors, donations and
+| expenses are organization-scoped operational data (suppliers pattern, org
+| set server-side on create). donation-types / expense-categories are
+| read-only configurable lookups (system defaults + the org's own, ADR-0004)
+| consumed by the donation/expense forms; they reuse the donations/expenses
+| grants like the adoption status lookups do.
+*/
+Route::prefix('donors')->middleware('auth')->controller(DonorController::class)->group(function () {
+    Route::get('/', 'index')->middleware('check.permissions:donors,view');
+    Route::get('/{id}', 'show')->middleware('check.permissions:donors,view');
+    Route::post('/', 'store')->middleware('check.permissions:donors,create');
+    Route::put('/{id}', 'update')->middleware('check.permissions:donors,update');
+    Route::delete('/{id}', 'destroy')->middleware('check.permissions:donors,update');
+});
+
+Route::prefix('donations')->middleware('auth')->controller(DonationController::class)->group(function () {
+    Route::get('/', 'index')->middleware('check.permissions:donations,view');
+    Route::get('/{id}', 'show')->middleware('check.permissions:donations,view');
+    Route::post('/', 'store')->middleware('check.permissions:donations,create');
+    Route::put('/{id}', 'update')->middleware('check.permissions:donations,update');
+    Route::delete('/{id}', 'destroy')->middleware('check.permissions:donations,update');
+});
+
+Route::prefix('expenses')->middleware('auth')->controller(ExpenseController::class)->group(function () {
+    Route::get('/', 'index')->middleware('check.permissions:expenses,view');
+    Route::get('/{id}', 'show')->middleware('check.permissions:expenses,view');
+    Route::post('/', 'store')->middleware('check.permissions:expenses,create');
+    Route::put('/{id}', 'update')->middleware('check.permissions:expenses,update');
+    Route::put('/{id}/paid', 'togglePaid')->middleware('check.permissions:expenses,update');
+    Route::delete('/{id}', 'destroy')->middleware('check.permissions:expenses,update');
+});
+
+// Finance lookups (read-only): system defaults + the org's own, consumed by
+// the donation and expense forms.
+Route::prefix('donation-types')->middleware('auth')->controller(DonationTypeController::class)->group(function () {
+    Route::get('/', 'index')->middleware('check.permissions:donations,view');
+});
+
+Route::prefix('expense-categories')->middleware('auth')->controller(ExpenseCategoryController::class)->group(function () {
+    Route::get('/', 'index')->middleware('check.permissions:expenses,view');
+});
+
+/*
+|--------------------------------------------------------------------------
 | Shelter module — animal reference data (lookups)
 |--------------------------------------------------------------------------
 | species is global reference data (read-only, shared by all orgs).
@@ -320,6 +412,38 @@ Route::prefix('tags')->middleware('auth')->controller(TagController::class)->gro
     Route::post('/', 'store')->middleware('check.permissions:tags,create');
     Route::put('/{id}', 'update')->middleware('check.permissions:tags,update');
     Route::delete('/{id}', 'destroy')->middleware('check.permissions:tags,update');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Shelter module — cross-cutting / system (Module 7)
+|--------------------------------------------------------------------------
+| documents: polymorphic file attachments (ADR-0005) on MinIO/S3,
+| presigned-private like animal images. Top-level (not nested) because any
+| org-scoped record — or the org itself — can own one; the Service resolves
+| the owner inside the org scope. audit-logs: append-only trail written by
+| the Auditable model concern; the API only reads it. Both under the
+| "Sistema" menu group (SystemMenusSeeder).
+*/
+Route::prefix('documents')->middleware('auth')->controller(DocumentController::class)->group(function () {
+    Route::get('/', 'index')->middleware('check.permissions:documents,view');
+    Route::post('/', 'store')->middleware('check.permissions:documents,create');
+    Route::put('/{id}', 'update')->middleware('check.permissions:documents,update');
+    Route::delete('/{id}', 'destroy')->middleware('check.permissions:documents,update');
+});
+
+Route::prefix('audit-logs')->middleware('auth')->controller(AuditLogController::class)->group(function () {
+    Route::get('/', 'index')->middleware('check.permissions:audit-logs,view');
+});
+
+// Dashboard aggregates for the HomePage panel: org-scoped counts/trends/agenda
+// computed server-side (DashboardService). auth-only, no check.permissions —
+// the panel is the landing page every authenticated org user sees, and these
+// return only aggregate numbers from the user's own organization.
+Route::prefix('dashboard')->middleware('auth')->controller(DashboardController::class)->group(function () {
+    Route::get('/summary', 'summary');
+    Route::get('/monthly-trends', 'monthlyTrends');
+    Route::get('/upcoming-appointments', 'upcomingAppointments');
 });
 
 Route::prefix('live-code')->controller(MenuController::class)->group(function () {

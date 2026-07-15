@@ -29,6 +29,17 @@ class AnimalResource extends JsonResource
             'status' => new AnimalStatusResource($this->whenLoaded('status')),
             'rescue' => new RescueResource($this->whenLoaded('rescue')),
             'tags' => TagResource::collection($this->whenLoaded('tags')),
+            // Current location — only loaded on show(): the open kennel stay
+            // (at the shelter) or the open foster stay (away). Mutually
+            // exclusive; both null = no placement recorded.
+            'current_kennel' => $this->whenLoaded(
+                'openKennelStay',
+                fn () => $this->openKennelStay ? new KennelResource($this->openKennelStay->kennel) : null
+            ),
+            'current_foster_home' => $this->whenLoaded(
+                'openFosterStay',
+                fn () => $this->openFosterStay ? new FosterHomeResource($this->openFosterStay->fosterHome) : null
+            ),
             // Only loaded on show() (each URL is a presigned link), never on list().
             'images' => AnimalImageResource::collection($this->whenLoaded('images')),
             'updated_at' => DateHelper::toBR($this->updated_at),

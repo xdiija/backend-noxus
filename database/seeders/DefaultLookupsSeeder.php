@@ -19,6 +19,7 @@ class DefaultLookupsSeeder extends Seeder
             AnimalSizesTableSeeder::class,
             AdoptionStatusesTableSeeder::class,
             AdoptionFollowUpStatusesTableSeeder::class,
+            KennelStatusesTableSeeder::class,
             DonationTypesTableSeeder::class,
             ExpenseCategoriesTableSeeder::class,
             VaccinesTableSeeder::class,

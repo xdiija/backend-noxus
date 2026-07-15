@@ -16,7 +16,7 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
  * @OA\Info(title="Documentação Noxus API", version="1.0")
  */
 class UserController extends Controller
-{   
+{
     public function __construct(
         protected UserService $userService
     ) {}
@@ -31,7 +31,7 @@ class UserController extends Controller
     }
 
     public function store(StoreUpdateUserRequestRequest $request)
-    {        
+    {
         return new UserResource(
             $this->userService->create(CreateUserDTO::fromRequest($request))
         );
@@ -66,7 +66,7 @@ class UserController extends Controller
             );
         } catch (InvalidPasswordChangeException $e) {
             return response()->json([
-                'errors' => [$e->field => $e->getMessage()]
+                'errors' => [$e->field => $e->getMessage()],
             ], 400);
         }
     }

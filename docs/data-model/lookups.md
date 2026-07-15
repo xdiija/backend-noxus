@@ -15,9 +15,11 @@ Two kinds of reference tables:
     `tags`): a single curated list per lookup; only Noxus users create/edit/
     delete, all rows are `NULL`-org, every tenant reads the same list
     ([ADR-0008](../decisions/0008-noxus-managed-global-lookups.md)).
-  - Lookups for later modules (`adoption_statuses`, `donation_types`,
-    `expense_categories`, `adoption_follow_up_statuses`) keep the ADR-0004
-    per-org model for now; revisit when their module is built.
+  - The workflow/finance lookups (`adoption_statuses`,
+    `adoption_follow_up_statuses`, `kennel_statuses`, `donation_types`,
+    `expense_categories`) keep the ADR-0004 per-org model: exposed as
+    read-only list endpoints returning the system defaults plus the org's own
+    rows (no management CRUD yet).
 
 Seeded by `DefaultLookupsSeeder` (idempotent). Defaults below are Portuguese
 (user-facing); table/column names stay English.
@@ -56,6 +58,17 @@ Adoption lifecycle. Columns: `organization_id?`, `name`, `color`, `sort_order`,
 ### `adoption_follow_up_statuses`
 Columns: `organization_id?`, `name`, `color`.
 Defaults: Agendado, Contatado, Sem Resposta, Alerta, Encerrado.
+
+### `kennel_statuses`
+Kennel operational state (not occupancy — that is derived from open stays, see
+`entities/kennels.md`). Columns: `organization_id?`, `name`, `color`,
+`sort_order`, `is_default`.
+
+| name | default |
+|------|---------|
+| Disponível | ✅ is_default |
+| Em Manutenção | |
+| Isolamento | |
 
 ### `donation_types`
 Columns: `organization_id?`, `name`.

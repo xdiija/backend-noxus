@@ -13,13 +13,12 @@ class CheckPermissions
         $isNoxusUser = PermissionService::isNoxusUser();
         $hasPermission = Auth::user()->hasPermission($menuKey, $permission);
 
-        if (!$isNoxusUser && !$hasPermission) {
+        if (! $isNoxusUser && ! $hasPermission) {
             return response()->json([
-                'error' => 'Usuário sem permissão para acessar este recurso!'
+                'error' => 'Usuário sem permissão para acessar este recurso!',
             ], 403);
         }
-    
+
         return $next($request);
     }
-
 }

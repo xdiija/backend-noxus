@@ -23,7 +23,7 @@ class CustomerResource extends JsonResource
                 'name' => Status::tryFrom($this->status)?->label(),
             ],
             'updated_at' => DateHelper::toBR($this->updated_at),
-            'created_at' => DateHelper::toBR($this->created_at)
+            'created_at' => DateHelper::toBR($this->created_at),
         ];
     }
 }

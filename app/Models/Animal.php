@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -11,7 +12,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Animal extends Model
 {
-    use SoftDeletes;
+    use Auditable, SoftDeletes;
 
     protected $table = 'animals';
 
@@ -113,6 +114,29 @@ class Animal extends Model
     public function fosterStays(): HasMany
     {
         return $this->hasMany(AnimalFosterHome::class);
+    }
+
+    /**
+     * Currently open foster stay (exit_date IS NULL) — at most one exists,
+     * application-enforced (fostering.md).
+     */
+    public function openFosterStay(): HasOne
+    {
+        return $this->hasOne(AnimalFosterHome::class)->whereNull('exit_date');
+    }
+
+    public function kennelStays(): HasMany
+    {
+        return $this->hasMany(AnimalKennelStay::class);
+    }
+
+    /**
+     * Currently open kennel stay (exit_date IS NULL) — at most one exists,
+     * application-enforced (kennels.md).
+     */
+    public function openKennelStay(): HasOne
+    {
+        return $this->hasOne(AnimalKennelStay::class)->whereNull('exit_date');
     }
 
     /**

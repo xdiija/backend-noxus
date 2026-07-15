@@ -23,10 +23,13 @@ Migrations already exist (`database/migrations/2026_07_01_*`), so each module is
 | 3 — Adoptions | ✅ Done |
 | 4 — Health | 🟨 Backend done — UI pending |
 | 5 — Fostering & volunteers | ✅ Done |
-| 6 — Finance | ⬜ |
-| 7 — Cross-cutting (documents, audit) | ⬜ |
+| 6 — Finance | ✅ Done |
+| 7 — Cross-cutting (documents, audit) | ✅ Done |
+| 8 — Kennels (housing / where the animal is at) | ✅ Done |
 
-Dependency spine: `0 → 1 → 2 → 3`; modules `4,5,6,7` are largely independent.
+Dependency spine: `0 → 1 → 2 → 3`; modules `4,5,6,7,8` are largely independent
+(8 touches 2 and 5: animal status changes close kennel stays, and kennel/foster
+stays are mutually exclusive).
 
 ---
 
@@ -138,36 +141,107 @@ mode: searchable animal select to open a stay, close via
 `ClosePlacementDialog`, delete). Menus render from `getMenus()` after
 re-seeding + re-login.
 
-## Module 6 — Finance ⬜
-Donors; Donations (typed, in-kind allowed); Expenses (categorized, `paid`).
+## Module 6 — Finance ✅
+Lightweight income/outgoing tracking (ADR-0007). Donors CRUD (org-scoped,
+`suppliers` pattern). Donations CRUD (org-scoped): typed by `donation_types`;
+the donor is either an org-scoped `donor_id` link **or** the inline `donor_*`
+fallback fields (a linked donor wins — `StoreUpdateDonationRequest` drops the
+inline fields when `donor_id` is present); `amount` nullable for in-kind gifts;
+`donation_date` can't be future. Expenses CRUD (org-scoped): categorized by
+`expense_categories`, `amount` required, `expense_date` may be future (unpaid
+bill), and the `paid` boolean is the only accounts-payable state — toggled via
+`PUT /expenses/{id}/paid` (volunteers `changeStatus` pattern).
+`donation_types` and `expense_categories` are read-only configurable lookups
+(system defaults + org's own, ADR-0004 — the adoption-statuses pattern),
+exposed as `GET /donation-types` / `GET /expense-categories` reusing the
+`donations`/`expenses` grants.
+Menu: new top-level **Financeiro** group → **Doadores** (`/donors`),
+**Doações** (`/donations`), **Despesas** (`/expenses`) (`FinanceMenusSeeder`,
+Admin granted full access; Noxus bypasses). Covered by
+`tests/Feature/DonorTest.php`, `DonationTest.php`, `ExpenseTest.php`.
 Tables: `donors`, `donations`, `donation_types`, `expenses`, `expense_categories`.
+Frontend: `DonorsPage`/`DonorsForm` (phone mask) and
+`DonationsPage`/`DonationsForm` (searchable donor select with inline
+anonymous-donor fields when no donor is linked, BRL-masked optional amount)
+and `ExpensesPage` (paid/pending chip + toggle row action) / `ExpensesForm`
+(category select, BRL-masked amount, paid toggle). Menus render from
+`getMenus()` after re-seeding + re-login.
 
-## Module 7 — Cross-cutting / system ⬜
-Documents (polymorphic, ADR-0005); Audit logs; dashboard/report endpoints.
+## Module 7 — Cross-cutting / system ✅
+**Documents** (polymorphic, ADR-0005): top-level org-scoped resource
+(`GET/POST /documents`, `PUT/DELETE /documents/{id}`) — not nested, because
+any record or the org itself (both morphs null) can own one. Files live on
+MinIO/S3 presigned-private like animal images; the original filename is kept
+in the object key (`{uniqid}_{slug.ext}` — the schema has no name column by
+design) and exposed as `name` in the Resource. The API accepts friendly owner
+keys (`Document::OWNER_TYPES`: animal, adopter, adoption, volunteer,
+foster_home) and `DocumentService` resolves the owner **inside the org scope**
+(404 cross-org). Only the `type` metadata is editable; replacing a file =
+delete + re-upload.
+**Audit logs**: append-only trail written by the `Auditable` model concern
+(`app/Models/Concerns/Auditable.php`) on created/updated/deleted — applied to
+Animal, Adopter, Adoption, Volunteer, FosterHome, Donor, Donation, Expense and
+Document. Only authenticated actions are audited (seeders stay silent); org
+comes from the affected row, falling back to the actor's. Read-only API:
+`GET /audit-logs` (org-scoped, filters: `entity`, `entity_id`, `action`,
+`filter` on entity/user name) — no write surface anywhere.
+**Dashboard endpoints** (auth-only, no `check.permissions` — the panel is the
+landing page and returns only the caller's own-org aggregates):
+`GET /dashboard/summary` (animal counts by status — zero-count statuses
+included, sorted — and by species, + active volunteer count),
+`GET /dashboard/monthly-trends?months=N` (adoptions + rescues pre-bucketed per
+month, zero months included) and `GET /dashboard/upcoming-appointments?days=N`
+(cross-animal agenda: scheduled `appointment_date`s **and** suggested
+`next_visit` returns inside the window, date-ordered). *Note:* "vaccines due"
+from the original plan isn't representable — `animal_vaccines` has no
+next-dose column (migrations are canonical), so the agenda covers
+appointments/returns only.
+Menu: new top-level **Sistema** group → **Documentos** (`/documents`, Admin
+view/create/update) + **Auditoria** (`/audit-logs`, Admin view-only)
+(`SystemMenusSeeder`; Noxus bypasses). Covered by
+`tests/Feature/DocumentTest.php`, `AuditLogTest.php`, `DashboardTest.php`.
 Tables: `documents`, `audit_logs`.
+Frontend: `DocumentsPage` (server-paginated list with owner-type filter;
+upload/edit-type happen in dialogs — upload links a searchable owner select
+per kind; download opens the fresh presigned URL) and `AuditLogsPage`
+(read-only list with entity/action select filters + action chips).
+`HomePage` now consumes `dashboardService` (`summary`/`monthlyTrends`/
+`upcomingAppointments`) — the `fetchAllPages` client-side aggregation is gone —
+and gained an "Agenda" card listing upcoming consultas/retornos. Menus render
+from `getMenus()` after re-seeding + re-login.
 
-**Dashboard/report endpoints — notes from the `HomePage` charts built ahead of
-this module:** `HomePage.vue` currently computes everything client-side from
-existing CRUD endpoints (animals/adoptions/volunteers), paginating through
-every page with `per_page=100` and aggregating in the browser — workable at
-today's shelter scale but not something to keep scaling. When this module is
-built, prefer dedicated aggregate endpoints over more client-side pagination
-loops, in particular:
-- **Status/species counts** — `HomePage` derives these by fetching every
-  animal; a `GET` that returns pre-aggregated counts (e.g. grouped by
-  `status_id`/`species_id`) avoids pulling full rows just to count them.
-- **Monthly trends** (adoptions per month, rescues vs. adoptions) — currently
-  bucketed client-side from `adoption_date`/`rescue.rescue_date` strings across
-  a full paginated fetch; a real endpoint should accept a date range and
-  return pre-bucketed series server-side.
-- **Upcoming vaccines/appointments due** — not built at all yet. `animal_vaccines`
-  and `appointments` are only reachable per-animal (`animals/{animal}/vaccines`,
-  `animals/{animal}/appointments}`), so there's no way today to ask "what's due
-  across every animal in the org in the next N days." This needs a
-  cross-animal endpoint, not just client aggregation.
-- If status/species/monthly-trend endpoints land, swap `HomePage`'s
-  `fetchAllPages` aggregation for them and delete the client-side grouping
-  logic — it becomes dead weight once the backend does the counting.
+## Module 8 — Kennels (housing) ✅
+Where the animal is at, inside the shelter (spec:
+`data-model/entities/kennels.md`). Kennels CRUD (org-scoped, `suppliers`
+pattern; name unique per org, app-enforced; `capacity` required;
+`open_stays_count` exposed for occupancy — always derived, never stored;
+delete blocked while open stays exist). Kennel status is the `kennel_statuses`
+configurable lookup (read-only `GET /kennel-statuses`, ADR-0004; seeded:
+Disponível ✅default, Em Manutenção, Isolamento) — a null `status_id` on
+create falls back to the `is_default` row. Stays are nested under their kennel
+(`kennels/{kennel}/stays`, foster-placements pattern): `POST` opens
+(`KennelStayService` enforces kennels.md — one open stay per animal, capacity,
+kennel not "Em Manutenção", animal on-site: no off-site status and no open
+foster stay), `PUT /{id}` corrects open stays only (closed = immutable
+history), `PUT /{id}/close` sets `exit_date`, `PUT /{id}/transfer` closes +
+opens in the target kennel (reason "Transferência") in one transaction.
+Kennel workflows never change the animal's status; the reverse hook lives in
+`AnimalService::closeKennelStayIfOffSite` — any status change to
+Adotado / Em Lar Temporário / Óbito (adoption, fostering, death, manual edit)
+auto-closes the open stay.
+Menu: **Abrigo** group → **Canis** (`/kennels`) (`KennelsMenusSeeder`, Admin
+granted full access; nested stays + the status lookup reuse the `kennels`
+grant). Covered by `tests/Feature/KennelTest.php`, `KennelStayTest.php`.
+Tables: `kennel_statuses`, `kennels`, `animal_kennel_stays`
+(migrations `2026_07_14_*`).
+Frontend: `KennelsPage` (status + occupancy chips, server-paginated) /
+`KennelsForm` (status select preselecting the `is_default` lookup row, size
+select; nested stays in edit mode: searchable animal select + entry date +
+reason to open, close via the shared `ClosePlacementDialog`, transfer via
+`TransferStayDialog` — target kennel + date —, delete). `AnimalsForm` shows a
+"Localização atual" banner (edit mode) from the new `current_kennel` /
+`current_foster_home` fields on the animal show endpoint. Menus render from
+`getMenus()` after re-seeding + re-login.
 
 ---
 
