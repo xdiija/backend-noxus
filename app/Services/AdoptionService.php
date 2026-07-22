@@ -8,6 +8,7 @@ use App\Models\AdoptionStatus;
 use App\Models\AnimalStatus;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -58,6 +59,28 @@ class AdoptionService
             ->when($animalId, fn (Builder $q) => $q->where('animal_id', $animalId));
 
         return $query->latest('id')->paginate($perPage);
+    }
+
+    /**
+     * Slim {id, name} rows for host-gated select fields (document owner
+     * search). Adoptions have no name of their own, so the label mirrors the
+     * "#id — animal / adopter" format the documents dialog shows.
+     */
+    public function options(string $filter = '', int $limit = 20): Collection
+    {
+        return $this->scoped()
+            ->with(['animal:id,name', 'adopter:id,name'])
+            ->when($filter !== '', fn (Builder $q) => $q->where(function (Builder $sub) use ($filter) {
+                $sub->whereHas('animal', fn (Builder $a) => $a->where('name', 'like', "%{$filter}%"))
+                    ->orWhereHas('adopter', fn (Builder $a) => $a->where('name', 'like', "%{$filter}%"));
+            }))
+            ->latest('id')
+            ->limit($limit)
+            ->get()
+            ->map(fn ($row) => [
+                'id' => $row->id,
+                'name' => "#{$row->id} — ".($row->animal?->name ?? 'animal').' / '.($row->adopter?->name ?? 'adotante'),
+            ]);
     }
 
     public function find(string $id): Adoption

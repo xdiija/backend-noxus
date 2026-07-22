@@ -5,14 +5,47 @@ namespace App\Http\Controllers;
 use App\DTOs\Kennel\KennelDTO;
 use App\Http\Requests\Kennel\IndexKennelsRequest;
 use App\Http\Requests\Kennel\StoreUpdateKennelRequest;
+use App\Http\Resources\AnimalSizeResource;
 use App\Http\Resources\KennelResource;
+use App\Http\Resources\KennelStatusResource;
+use App\Services\AnimalService;
+use App\Services\AnimalSizeService;
 use App\Services\KennelService;
+use App\Services\KennelStatusService;
+use Illuminate\Http\Request;
 
 class KennelController extends Controller
 {
     public function __construct(
         protected KennelService $kennelService
     ) {}
+
+    /**
+     * The lookups the kennel form needs (statuses + sizes), gated by the
+     * kennels permission so it works without the lookup menu grants.
+     */
+    public function formOptions(
+        KennelStatusService $kennelStatusService,
+        AnimalSizeService $animalSizeService,
+    ) {
+        return response()->json([
+            'data' => [
+                'statuses' => KennelStatusResource::collection($kennelStatusService->list()),
+                'sizes' => AnimalSizeResource::collection($animalSizeService->list()),
+            ],
+        ]);
+    }
+
+    /**
+     * Slim {id, name} animal picker for the stay dialog, gated by the
+     * kennels permission so it works without the animals menu grant.
+     */
+    public function animalOptions(Request $request, AnimalService $animalService)
+    {
+        return response()->json([
+            'data' => $animalService->options((string) $request->input('filter', '')),
+        ]);
+    }
 
     public function index(IndexKennelsRequest $request)
     {

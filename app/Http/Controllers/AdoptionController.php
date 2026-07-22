@@ -8,13 +8,34 @@ use App\Http\Requests\Adoption\IndexAdoptionsRequest;
 use App\Http\Requests\Adoption\ReturnAdoptionRequest;
 use App\Http\Requests\Adoption\StoreUpdateAdoptionRequest;
 use App\Http\Resources\AdoptionResource;
+use App\Services\AdopterService;
 use App\Services\AdoptionService;
+use App\Services\AnimalService;
+use Illuminate\Http\Request;
 
 class AdoptionController extends Controller
 {
     public function __construct(
         protected AdoptionService $adoptionService
     ) {}
+
+    /**
+     * Slim {id, name} pickers for the adoption form, gated by the adoptions
+     * permission so it works without the animals/adopters menu grants.
+     */
+    public function animalOptions(Request $request, AnimalService $animalService)
+    {
+        return response()->json([
+            'data' => $animalService->options((string) $request->input('filter', '')),
+        ]);
+    }
+
+    public function adopterOptions(Request $request, AdopterService $adopterService)
+    {
+        return response()->json([
+            'data' => $adopterService->options((string) $request->input('filter', '')),
+        ]);
+    }
 
     public function index(IndexAdoptionsRequest $request)
     {

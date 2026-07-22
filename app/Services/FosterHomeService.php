@@ -6,6 +6,7 @@ use App\DTOs\FosterHome\FosterHomeDTO;
 use App\Models\FosterHome;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
 
 class FosterHomeService
 {
@@ -22,6 +23,21 @@ class FosterHomeService
         }
 
         return $query->latest('id')->paginate($perPage);
+    }
+
+    /**
+     * Slim {id, name} rows (name = responsible_name) for host-gated select
+     * fields (document owner search), so consumers don't need this
+     * resource's own menu grant.
+     */
+    public function options(string $filter = '', int $limit = 20): Collection
+    {
+        return $this->scoped()
+            ->when($filter !== '', fn (Builder $q) => $q->where('responsible_name', 'like', "%{$filter}%"))
+            ->orderBy('responsible_name')
+            ->limit($limit)
+            ->get(['id', 'responsible_name'])
+            ->map(fn ($row) => ['id' => $row->id, 'name' => $row->responsible_name]);
     }
 
     public function find(string $id): FosterHome

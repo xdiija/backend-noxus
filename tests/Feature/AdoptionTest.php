@@ -205,6 +205,27 @@ class AdoptionTest extends TestCase
             ->assertNotFound();
     }
 
+    public function test_animal_and_adopter_options_are_slim_and_org_scoped(): void
+    {
+        [$org, $admin] = $this->orgWithAdmin();
+        [$orgB] = $this->orgWithAdmin();
+
+        $mine = $this->makeAnimal($org, 'Rex');
+        $this->makeAnimal($orgB, 'Alheio');
+        $adopter = $this->makeAdopter($org, 'Maria');
+
+        $this->actingAs($admin, 'api')
+            ->getJson('/api/adoptions/animal-options?filter=Rex')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0', ['id' => $mine->id, 'name' => 'Rex']);
+
+        $this->actingAs($admin, 'api')
+            ->getJson('/api/adoptions/adopter-options')
+            ->assertOk()
+            ->assertJsonFragment(['id' => $adopter->id, 'name' => 'Maria']);
+    }
+
     // ---- helpers ---------------------------------------------------------
 
     /**

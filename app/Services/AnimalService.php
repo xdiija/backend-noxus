@@ -7,6 +7,7 @@ use App\Models\Animal;
 use App\Models\AnimalStatus;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 class AnimalService
@@ -17,8 +18,14 @@ class AnimalService
      */
     private const WITH = ['species', 'breed', 'size', 'status', 'rescue', 'tags'];
 
-    public function list(int $perPage = 10, string $filter = '', ?int $statusId = null, ?int $speciesId = null): LengthAwarePaginator
-    {
+    public function list(
+        int $perPage = 10,
+        string $filter = '',
+        ?int $statusId = null,
+        ?int $speciesId = null,
+        ?string $sex = null,
+        ?int $sizeId = null,
+    ): LengthAwarePaginator {
         $query = $this->scoped()->with(self::WITH);
 
         if (! empty($filter)) {
@@ -30,10 +37,28 @@ class AnimalService
             });
         }
 
+        // All filters apply simultaneously (AND'ed): a null value is simply
+        // skipped, so "todos"/"todas" on the frontend means "no constraint".
         $query->when($statusId, fn (Builder $q) => $q->where('status_id', $statusId))
-            ->when($speciesId, fn (Builder $q) => $q->where('species_id', $speciesId));
+            ->when($speciesId, fn (Builder $q) => $q->where('species_id', $speciesId))
+            ->when($sex, fn (Builder $q) => $q->where('sex', $sex))
+            ->when($sizeId, fn (Builder $q) => $q->where('size_id', $sizeId));
 
         return $query->latest('id')->paginate($perPage);
+    }
+
+    /**
+     * Slim {id, name} rows for host-gated select fields (adoption, kennel and
+     * foster forms), so consumers don't need this resource's own menu grant.
+     */
+    public function options(string $filter = '', int $limit = 20): Collection
+    {
+        return $this->scoped()
+            ->when($filter !== '', fn (Builder $q) => $q->where('name', 'like', "%{$filter}%"))
+            ->orderBy('name')
+            ->limit($limit)
+            ->get(['id', 'name'])
+            ->map(fn ($row) => ['id' => $row->id, 'name' => $row->name]);
     }
 
     public function find(string $id): Animal
@@ -121,10 +146,26 @@ class AnimalService
         });
     }
 
+    /**
+     * Animal deletes are soft, so the FK cascades never fire — cascade the
+     * soft delete to the children that surface outside the animal's own
+     * routes (rescues feed the dashboard trends; appointments feed the
+     * agenda) and to the rest of the soft-deletable clinical history for
+     * consistency. Vaccine doses and medication courses have no deleted_at
+     * and only render nested in the animal, so they are left untouched.
+     */
     public function delete(string $id): void
     {
-        $animal = $this->scoped()->findOrFail($id);
-        $animal->delete();
+        DB::transaction(function () use ($id) {
+            $animal = $this->scoped()->findOrFail($id);
+
+            $animal->rescue()->delete();
+            $animal->healthRecords()->delete();
+            $animal->appointments()->delete();
+            $animal->surgeries()->delete();
+
+            $animal->delete();
+        });
     }
 
     /**

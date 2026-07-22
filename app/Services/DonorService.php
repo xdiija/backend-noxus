@@ -6,6 +6,7 @@ use App\DTOs\Donor\DonorDTO;
 use App\Models\Donor;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
 
 class DonorService
 {
@@ -23,6 +24,20 @@ class DonorService
         }
 
         return $query->latest('id')->paginate($perPage);
+    }
+
+    /**
+     * Slim {id, name} rows for host-gated select fields (donation form), so
+     * consumers don't need this resource's own menu grant.
+     */
+    public function options(string $filter = '', int $limit = 20): Collection
+    {
+        return $this->scoped()
+            ->when($filter !== '', fn (Builder $q) => $q->where('name', 'like', "%{$filter}%"))
+            ->orderBy('name')
+            ->limit($limit)
+            ->get(['id', 'name'])
+            ->map(fn ($row) => ['id' => $row->id, 'name' => $row->name]);
     }
 
     public function find(string $id): Donor

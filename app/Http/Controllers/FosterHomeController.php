@@ -6,13 +6,26 @@ use App\DTOs\FosterHome\FosterHomeDTO;
 use App\Http\Requests\FosterHome\IndexFosterHomesRequest;
 use App\Http\Requests\FosterHome\StoreUpdateFosterHomeRequest;
 use App\Http\Resources\FosterHomeResource;
+use App\Services\AnimalService;
 use App\Services\FosterHomeService;
+use Illuminate\Http\Request;
 
 class FosterHomeController extends Controller
 {
     public function __construct(
         protected FosterHomeService $fosterHomeService
     ) {}
+
+    /**
+     * Slim {id, name} animal picker for the placement dialog, gated by the
+     * foster-homes permission so it works without the animals menu grant.
+     */
+    public function animalOptions(Request $request, AnimalService $animalService)
+    {
+        return response()->json([
+            'data' => $animalService->options((string) $request->input('filter', '')),
+        ]);
+    }
 
     public function index(IndexFosterHomesRequest $request)
     {

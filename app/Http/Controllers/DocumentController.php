@@ -7,13 +7,52 @@ use App\Http\Requests\Document\IndexDocumentsRequest;
 use App\Http\Requests\Document\StoreDocumentRequest;
 use App\Http\Requests\Document\UpdateDocumentRequest;
 use App\Http\Resources\DocumentResource;
+use App\Services\AdopterService;
+use App\Services\AdoptionService;
+use App\Services\AnimalService;
 use App\Services\DocumentService;
+use App\Services\FosterHomeService;
+use App\Services\VolunteerService;
+use Illuminate\Http\Request;
 
 class DocumentController extends Controller
 {
+    /**
+     * Owner-type keys (Document::OWNER_TYPES) mapped to the service whose
+     * options() feeds the upload dialog's owner picker.
+     */
+    private const OWNER_OPTION_SERVICES = [
+        'animal' => AnimalService::class,
+        'adopter' => AdopterService::class,
+        'adoption' => AdoptionService::class,
+        'volunteer' => VolunteerService::class,
+        'foster_home' => FosterHomeService::class,
+    ];
+
     public function __construct(
         protected DocumentService $documentService
     ) {}
+
+    /**
+     * Slim {id, name} owner picker for the upload dialog, gated by the
+     * documents permission so it works without the owner resources' own
+     * menu grants.
+     */
+    public function ownerOptions(Request $request)
+    {
+        $type = (string) $request->input('type');
+
+        abort_unless(
+            isset(self::OWNER_OPTION_SERVICES[$type]),
+            400,
+            'Tipo de vínculo inválido.'
+        );
+
+        return response()->json([
+            'data' => app(self::OWNER_OPTION_SERVICES[$type])
+                ->options((string) $request->input('filter', '')),
+        ]);
+    }
 
     /**
      * No ETag/304 here: every payload embeds fresh presigned URLs, so the

@@ -9,6 +9,7 @@ use App\Models\User;
 use Database\Seeders\AnimalMenusSeeder;
 use Database\Seeders\AnimalSizesTableSeeder;
 use Database\Seeders\AnimalStatusesTableSeeder;
+use Database\Seeders\BreedsTableSeeder;
 use Database\Seeders\SpeciesTableSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -109,6 +110,68 @@ class AnimalTest extends TestCase
             ->assertJsonMissing(['id' => $theirs->id]);
     }
 
+    public function test_index_filters_by_species_status_sex_and_size_simultaneously(): void
+    {
+        [$org, $admin] = $this->orgWithAdmin();
+
+        $availableId = $this->statusId('Disponível');
+        $treatmentId = $this->statusId('Em Tratamento');
+        $catId = $this->speciesId('Gato');
+        $dogId = $this->speciesId('Cachorro');
+        $smallId = $this->sizeId('Pequeno');
+        $mediumId = $this->sizeId('Médio');
+
+        // The one row every filter combination below should match.
+        $target = $this->makeAnimal($org, 'Rex', [
+            'species_id' => $dogId,
+            'size_id' => $mediumId,
+            'status_id' => $availableId,
+            'sex' => 'M',
+        ]);
+
+        // Differs by exactly one attribute each, so a combined filter proves
+        // every clause is applied (AND), not just the last one.
+        $wrongSpecies = $this->makeAnimal($org, 'Miau', [
+            'species_id' => $catId,
+            'size_id' => $mediumId,
+            'status_id' => $availableId,
+            'sex' => 'M',
+        ]);
+        $wrongStatus = $this->makeAnimal($org, 'Bolt', [
+            'species_id' => $dogId,
+            'size_id' => $mediumId,
+            'status_id' => $treatmentId,
+            'sex' => 'M',
+        ]);
+        $wrongSex = $this->makeAnimal($org, 'Luna', [
+            'species_id' => $dogId,
+            'size_id' => $mediumId,
+            'status_id' => $availableId,
+            'sex' => 'F',
+        ]);
+        $wrongSize = $this->makeAnimal($org, 'Toby', [
+            'species_id' => $dogId,
+            'size_id' => $smallId,
+            'status_id' => $availableId,
+            'sex' => 'M',
+        ]);
+
+        $response = $this->actingAs($admin, 'api')
+            ->getJson('/api/animals?'.http_build_query([
+                'species_id' => $dogId,
+                'status_id' => $availableId,
+                'sex' => 'M',
+                'size_id' => $mediumId,
+            ]))
+            ->assertOk()
+            ->assertJsonCount(1, 'data');
+
+        // assertJsonMissing(['id' => ...]) is unsafe here: it fuzzy-matches
+        // nested fragments like species/status objects that happen to share
+        // the same id, so compare the returned animal ids explicitly instead.
+        $this->assertSame([$target->id], collect($response->json('data'))->pluck('id')->all());
+    }
+
     public function test_animal_from_another_org_is_not_reachable(): void
     {
         [, $adminA] = $this->orgWithAdmin();
@@ -163,6 +226,100 @@ class AnimalTest extends TestCase
         ]);
     }
 
+    public function test_status_history_index_lists_transitions_newest_first(): void
+    {
+        [, $admin] = $this->orgWithAdmin();
+        $availableId = $this->statusId('Disponível');
+        $adoptedId = $this->statusId('Adotado');
+        $animal = $this->makeAnimal($this->orgOf($admin), 'Rex');
+
+        $this->actingAs($admin, 'api')
+            ->putJson("/api/animals/{$animal->id}/status", [
+                'status_id' => $availableId,
+                'notes' => 'Tratamento concluído',
+            ])
+            ->assertOk();
+
+        $this->actingAs($admin, 'api')
+            ->putJson("/api/animals/{$animal->id}/status", [
+                'status_id' => $adoptedId,
+                'notes' => 'Adoção concluída',
+            ])
+            ->assertOk();
+
+        // `makeAnimal` inserts directly (bypassing AnimalService::create), so
+        // only the two changeStatus calls are logged here — the initial-status
+        // row is covered by test_store_creates_org_scoped_animal_with_initial_status_history.
+        $response = $this->actingAs($admin, 'api')
+            ->getJson("/api/animals/{$animal->id}/status-history")
+            ->assertOk()
+            ->assertJsonCount(2, 'data');
+
+        // Newest first.
+        $response->assertJsonPath('data.0.notes', 'Adoção concluída')
+            ->assertJsonPath('data.0.new_status.id', $adoptedId)
+            ->assertJsonPath('data.1.notes', 'Tratamento concluído')
+            ->assertJsonPath('data.1.old_status.id', $animal->status_id);
+    }
+
+    public function test_status_history_on_another_orgs_animal_is_not_reachable(): void
+    {
+        [, $adminA] = $this->orgWithAdmin();
+        [$orgB] = $this->orgWithAdmin();
+        $theirAnimal = $this->makeAnimal($orgB, 'Rex');
+
+        $this->actingAs($adminA, 'api')
+            ->getJson("/api/animals/{$theirAnimal->id}/status-history")
+            ->assertNotFound();
+    }
+
+    public function test_status_options_only_requires_the_animals_permission(): void
+    {
+        [, $admin] = $this->orgWithAdmin();
+
+        // This setup grants animals,* but no animal-statuses grant (only
+        // ShelterMenusSeeder adds it), so the lookup route itself is denied…
+        $this->actingAs($admin, 'api')
+            ->getJson('/api/animal-statuses')
+            ->assertForbidden();
+
+        // …while the animals-gated options route still serves the statuses.
+        $this->actingAs($admin, 'api')
+            ->getJson('/api/animals/status-options')
+            ->assertOk()
+            ->assertJsonFragment(['name' => 'Em Tratamento'])
+            ->assertJsonFragment(['name' => 'Disponível']);
+    }
+
+    public function test_form_options_only_requires_the_animals_permission(): void
+    {
+        [, $admin] = $this->orgWithAdmin();
+
+        $this->seed(BreedsTableSeeder::class);
+
+        // Same premise as status-options: no lookup grants in this setup, so
+        // the individual lookup routes are denied…
+        $this->actingAs($admin, 'api')
+            ->getJson('/api/animal-sizes')
+            ->assertForbidden();
+        $this->actingAs($admin, 'api')
+            ->getJson('/api/breeds')
+            ->assertForbidden();
+        $this->actingAs($admin, 'api')
+            ->getJson('/api/tags')
+            ->assertForbidden();
+
+        // …while the combined animals-gated route serves everything the form
+        // needs in one response.
+        $this->actingAs($admin, 'api')
+            ->getJson('/api/animals/form-options')
+            ->assertOk()
+            ->assertJsonStructure(['data' => ['species', 'breeds', 'sizes', 'statuses', 'tags']])
+            ->assertJsonFragment(['name' => 'Cachorro'])
+            ->assertJsonFragment(['name' => 'Médio'])
+            ->assertJsonFragment(['name' => 'Disponível']);
+    }
+
     public function test_microchip_is_globally_unique(): void
     {
         [, $adminA] = $this->orgWithAdmin();
@@ -188,6 +345,43 @@ class AnimalTest extends TestCase
             ->assertNoContent();
 
         $this->assertSoftDeleted('animals', ['id' => $animal->id]);
+    }
+
+    public function test_destroy_cascades_soft_delete_to_rescue_and_clinical_history(): void
+    {
+        [$org, $admin] = $this->orgWithAdmin();
+        $animal = $this->makeAnimal($org, 'Rex');
+
+        // Children that surface outside the animal's own routes: the rescue
+        // feeds the dashboard trends, the appointment feeds the agenda.
+        $rescue = $animal->rescue()->create([
+            'organization_id' => $org->id,
+            'rescue_date' => '2026-06-01 10:00:00',
+        ]);
+        $record = $animal->healthRecords()->create([
+            'organization_id' => $org->id,
+            'type' => 'Exame',
+            'event_date' => '2026-06-02',
+        ]);
+        $appointment = $animal->appointments()->create([
+            'organization_id' => $org->id,
+            'appointment_date' => '2026-06-03 09:00:00',
+        ]);
+        $surgery = $animal->surgeries()->create([
+            'organization_id' => $org->id,
+            'surgery_date' => '2026-06-04',
+            'procedure' => 'Castração',
+        ]);
+
+        $this->actingAs($admin, 'api')
+            ->deleteJson("/api/animals/{$animal->id}")
+            ->assertNoContent();
+
+        $this->assertSoftDeleted('animals', ['id' => $animal->id]);
+        $this->assertSoftDeleted('rescues', ['id' => $rescue->id]);
+        $this->assertSoftDeleted('health_records', ['id' => $record->id]);
+        $this->assertSoftDeleted('appointments', ['id' => $appointment->id]);
+        $this->assertSoftDeleted('surgeries', ['id' => $surgery->id]);
     }
 
     // ---- helpers ---------------------------------------------------------

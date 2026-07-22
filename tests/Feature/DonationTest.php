@@ -226,6 +226,21 @@ class DonationTest extends TestCase
         $this->assertFalse($names->contains('Tipo Alheio'));
     }
 
+    public function test_donor_options_are_slim_and_org_scoped(): void
+    {
+        [$org, $admin] = $this->orgWithAdmin();
+        [$orgB] = $this->orgWithAdmin();
+
+        $mine = $this->makeDonor($org, 'João');
+        $this->makeDonor($orgB, 'Estranho');
+
+        $this->actingAs($admin, 'api')
+            ->getJson('/api/donations/donor-options')
+            ->assertOk()
+            ->assertJsonFragment(['id' => $mine->id, 'name' => 'João'])
+            ->assertJsonMissing(['name' => 'Estranho']);
+    }
+
     // ---- helpers ---------------------------------------------------------
 
     /**

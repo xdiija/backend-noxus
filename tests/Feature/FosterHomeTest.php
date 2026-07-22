@@ -2,11 +2,15 @@
 
 namespace Tests\Feature;
 
+use App\Models\Animal;
 use App\Models\FosterHome;
 use App\Models\Organization;
 use App\Models\Role;
 use App\Models\User;
+use Database\Seeders\AnimalSizesTableSeeder;
+use Database\Seeders\AnimalStatusesTableSeeder;
 use Database\Seeders\FosteringMenusSeeder;
+use Database\Seeders\SpeciesTableSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -121,6 +125,39 @@ class FosterHomeTest extends TestCase
         $this->actingAs($adminA, 'api')
             ->deleteJson("/api/foster-homes/{$theirs->id}")
             ->assertNotFound();
+    }
+
+    public function test_animal_options_only_requires_the_foster_homes_permission(): void
+    {
+        [$org, $admin] = $this->orgWithAdmin();
+
+        // Animal reference data isn't part of this suite's setup; seed just
+        // enough to create a pickable animal.
+        $this->seed(SpeciesTableSeeder::class);
+        $this->seed(AnimalSizesTableSeeder::class);
+        $this->seed(AnimalStatusesTableSeeder::class);
+
+        Animal::create([
+            'organization_id' => $org->id,
+            'name' => 'Rex',
+            'species_id' => (int) DB::table('species')->where('name', 'Cachorro')->value('id'),
+            'size_id' => (int) DB::table('animal_sizes')->where('name', 'Médio')->value('id'),
+            'status_id' => (int) DB::table('animal_statuses')->where('name', 'Disponível')->value('id'),
+            'birth_date_is_estimated' => true,
+            'neutered' => false,
+        ]);
+
+        // Only the fostering menus are granted here, so the raw animals route
+        // is denied…
+        $this->actingAs($admin, 'api')
+            ->getJson('/api/animals')
+            ->assertForbidden();
+
+        // …while the foster-homes-gated picker still serves it.
+        $this->actingAs($admin, 'api')
+            ->getJson('/api/foster-homes/animal-options?filter=Re')
+            ->assertOk()
+            ->assertJsonFragment(['name' => 'Rex']);
     }
 
     // ---- helpers ---------------------------------------------------------

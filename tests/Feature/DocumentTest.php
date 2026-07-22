@@ -237,6 +237,32 @@ class DocumentTest extends TestCase
         $this->assertDatabaseCount('documents', 0);
     }
 
+    public function test_owner_options_only_require_the_documents_permission(): void
+    {
+        [$org, $admin] = $this->orgWithAdmin();
+        $animal = $this->makeAnimal($org, 'Rex');
+
+        // The system menus grant documents only, so the owner resources' own
+        // routes are denied…
+        $this->actingAs($admin, 'api')
+            ->getJson('/api/animals')
+            ->assertForbidden();
+        $this->actingAs($admin, 'api')
+            ->getJson('/api/volunteers')
+            ->assertForbidden();
+
+        // …while the documents-gated owner picker still serves them.
+        $this->actingAs($admin, 'api')
+            ->getJson('/api/documents/owner-options?type=animal&filter=Re')
+            ->assertOk()
+            ->assertJsonFragment(['id' => $animal->id, 'name' => 'Rex']);
+
+        // Unknown owner types are rejected.
+        $this->actingAs($admin, 'api')
+            ->getJson('/api/documents/owner-options?type=invoice')
+            ->assertStatus(400);
+    }
+
     // ---- helpers ---------------------------------------------------------
 
     /**

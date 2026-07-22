@@ -6,6 +6,7 @@ use App\DTOs\Volunteer\VolunteerDTO;
 use App\Models\Volunteer;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
 
 class VolunteerService
 {
@@ -23,6 +24,20 @@ class VolunteerService
         }
 
         return $query->latest('id')->paginate($perPage);
+    }
+
+    /**
+     * Slim {id, name} rows for host-gated select fields (document owner
+     * search), so consumers don't need this resource's own menu grant.
+     */
+    public function options(string $filter = '', int $limit = 20): Collection
+    {
+        return $this->scoped()
+            ->when($filter !== '', fn (Builder $q) => $q->where('name', 'like', "%{$filter}%"))
+            ->orderBy('name')
+            ->limit($limit)
+            ->get(['id', 'name'])
+            ->map(fn ($row) => ['id' => $row->id, 'name' => $row->name]);
     }
 
     public function find(string $id): Volunteer

@@ -2,6 +2,8 @@
 
 namespace App\Http\Requests\User;
 
+use App\Models\Role;
+use App\Services\PermissionService;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -40,6 +42,12 @@ class StoreUpdateUserRequestRequest extends FormRequest
                 'required',
                 'integer',
                 'exists:roles,id',
+                // Noxus is the cross-tenant super-admin role (it bypasses
+                // CheckPermissions entirely); only Noxus users may grant it.
+                Rule::when(
+                    ! PermissionService::isNoxusUser(),
+                    [Rule::notIn([Role::NOXUS_ROLE])]
+                ),
             ],
         ];
 
@@ -76,6 +84,7 @@ class StoreUpdateUserRequestRequest extends FormRequest
             'role.required' => 'O campo perfil é obrigatório.',
             'role.integer' => 'O campo perfil deve ser um número inteiro.',
             'role.exists' => 'O perfil informado é inválido.',
+            'role.not_in' => 'O perfil informado é inválido.',
         ];
     }
 }

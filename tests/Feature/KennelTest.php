@@ -164,6 +164,30 @@ class KennelTest extends TestCase
             ->assertJsonPath('data.0.is_custom', false);
     }
 
+    public function test_form_and_animal_options_only_require_the_kennels_permission(): void
+    {
+        [$org, $admin] = $this->orgWithAdmin();
+        $this->makeAnimal($org, 'Rex');
+
+        // This setup seeds no lookup menu grants, so the raw lookup route is
+        // denied…
+        $this->actingAs($admin, 'api')
+            ->getJson('/api/animal-sizes')
+            ->assertForbidden();
+
+        // …while the kennels-gated bundle still serves the form lookups.
+        $this->actingAs($admin, 'api')
+            ->getJson('/api/kennels/form-options')
+            ->assertOk()
+            ->assertJsonStructure(['data' => ['statuses', 'sizes']])
+            ->assertJsonFragment(['name' => 'Médio']);
+
+        $this->actingAs($admin, 'api')
+            ->getJson('/api/kennels/animal-options?filter=Re')
+            ->assertOk()
+            ->assertJsonFragment(['name' => 'Rex']);
+    }
+
     // ---- helpers ---------------------------------------------------------
 
     /**

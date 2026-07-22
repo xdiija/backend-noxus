@@ -7,12 +7,25 @@ use App\Http\Requests\Donation\IndexDonationsRequest;
 use App\Http\Requests\Donation\StoreUpdateDonationRequest;
 use App\Http\Resources\DonationResource;
 use App\Services\DonationService;
+use App\Services\DonorService;
+use Illuminate\Http\Request;
 
 class DonationController extends Controller
 {
     public function __construct(
         protected DonationService $donationService
     ) {}
+
+    /**
+     * Slim {id, name} donor picker for the donation form, gated by the
+     * donations permission so it works without the donors menu grant.
+     */
+    public function donorOptions(Request $request, DonorService $donorService)
+    {
+        return response()->json([
+            'data' => $donorService->options((string) $request->input('filter', '')),
+        ]);
+    }
 
     public function index(IndexDonationsRequest $request)
     {

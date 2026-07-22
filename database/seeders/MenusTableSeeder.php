@@ -18,7 +18,7 @@ class MenusTableSeeder extends Seeder
                 'parent_id' => null,
                 'order' => 1,
                 'status' => 1,
-                'exclusive_noxus' => 0
+                'exclusive_noxus' => 0,
             ],
             [
                 //id: 2
@@ -28,8 +28,13 @@ class MenusTableSeeder extends Seeder
                 'parent_id' => 1,
                 'order' => 2,
                 'status' => 1,
-                'exclusive_noxus' => 0
+                'exclusive_noxus' => 0,
             ],
+            // Roles and menus are GLOBAL tables (no organization_id): a grant
+            // edited by one org's admin would change permissions for every
+            // organization. Until roles become org-scoped, managing them is
+            // Noxus-only — exclusive_noxus menus are hidden from other users
+            // and hasPermission() ignores any role_menu grant on them.
             [
                 //id: 3
                 'name' => 'Perfis',
@@ -38,7 +43,7 @@ class MenusTableSeeder extends Seeder
                 'parent_id' => 1,
                 'order' => 1,
                 'status' => 1,
-                'exclusive_noxus' => 0
+                'exclusive_noxus' => 1,
             ],
             [
                 //id: 4
@@ -48,7 +53,7 @@ class MenusTableSeeder extends Seeder
                 'parent_id' => 1,
                 'order' => 1,
                 'status' => 1,
-                'exclusive_noxus' => 0
+                'exclusive_noxus' => 1,
             ],
         ];
 

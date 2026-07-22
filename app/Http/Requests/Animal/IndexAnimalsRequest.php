@@ -18,6 +18,8 @@ class IndexAnimalsRequest extends FormRequest
             'filter' => ['sometimes', 'string', 'max:255'],
             'status_id' => ['sometimes', 'integer', 'exists:animal_statuses,id'],
             'species_id' => ['sometimes', 'integer', 'exists:species,id'],
+            'sex' => ['sometimes', 'in:M,F'],
+            'size_id' => ['sometimes', 'integer', 'exists:animal_sizes,id'],
         ];
     }
 
@@ -39,6 +41,8 @@ class IndexAnimalsRequest extends FormRequest
             'filter.max' => 'O campo filtro não pode ter mais de 255 caracteres.',
             'status_id.exists' => 'O status informado é inválido.',
             'species_id.exists' => 'A espécie informada é inválida.',
+            'sex.in' => 'O sexo informado é inválido.',
+            'size_id.exists' => 'O porte informado é inválido.',
         ];
     }
 }

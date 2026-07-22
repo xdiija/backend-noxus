@@ -10,6 +10,7 @@ use App\Http\Controllers\AnimalImageController;
 use App\Http\Controllers\AnimalMedicationController;
 use App\Http\Controllers\AnimalSizeController;
 use App\Http\Controllers\AnimalStatusController;
+use App\Http\Controllers\AnimalStatusHistoryController;
 use App\Http\Controllers\AnimalVaccineController;
 use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\AuditLogController;
@@ -25,10 +26,10 @@ use App\Http\Controllers\ExpenseCategoryController;
 use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\FosterHomeController;
 use App\Http\Controllers\FosterPlacementController;
+use App\Http\Controllers\HealthRecordController;
 use App\Http\Controllers\KennelController;
 use App\Http\Controllers\KennelStatusController;
 use App\Http\Controllers\KennelStayController;
-use App\Http\Controllers\HealthRecordController;
 use App\Http\Controllers\MedicationController;
 use App\Http\Controllers\MenuController;
 use App\Http\Controllers\OrganizationController;
@@ -40,7 +41,6 @@ use App\Http\Controllers\TagController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\VaccineController;
 use App\Http\Controllers\VolunteerController;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('auth')->controller(AuthController::class)->group(function () {
@@ -51,9 +51,6 @@ Route::prefix('auth')->controller(AuthController::class)->group(function () {
 });
 
 Route::prefix('users')->middleware('auth')->controller(UserController::class)->group(function () {
-    Route::get('/user', function (Request $request) {
-        return $request->user();
-    });
     Route::get('/', 'index')->middleware('check.permissions:users,view');
     Route::get('/{id}', 'show')->middleware('check.permissions:users,view');
     Route::put('/{id}', 'update')->middleware('check.permissions:users,update');
@@ -128,6 +125,11 @@ Route::prefix('organizations')->middleware('auth')->controller(OrganizationContr
 */
 Route::prefix('animals')->middleware('auth')->controller(AnimalController::class)->group(function () {
     Route::get('/', 'index')->middleware('check.permissions:animals,view');
+    // Status options for the list/form consumers, gated by the animals
+    // permission so pages don't depend on the animal-statuses lookup grant.
+    // Must stay above /{id} so "status-options" isn't captured as an id.
+    Route::get('/status-options', 'statusOptions')->middleware('check.permissions:animals,view');
+    Route::get('/form-options', 'formOptions')->middleware('check.permissions:animals,view');
     Route::get('/{id}', 'show')->middleware('check.permissions:animals,view');
     Route::post('/', 'store')->middleware('check.permissions:animals,create');
     Route::put('/{id}', 'update')->middleware('check.permissions:animals,update');
@@ -141,6 +143,12 @@ Route::prefix('animals/{animal}/images')->middleware('auth')->controller(AnimalI
     Route::get('/', 'index')->middleware('check.permissions:animals,view');
     Route::post('/', 'store')->middleware('check.permissions:animals,update');
     Route::delete('/{image}', 'destroy')->middleware('check.permissions:animals,update');
+});
+
+// Append-only status transition log (animal_status_history). Read-only: rows
+// are written by AnimalService::changeStatus/create, never through this route.
+Route::prefix('animals/{animal}/status-history')->middleware('auth')->controller(AnimalStatusHistoryController::class)->group(function () {
+    Route::get('/', 'index')->middleware('check.permissions:animals,view');
 });
 
 /*
@@ -163,6 +171,10 @@ Route::prefix('adopters')->middleware('auth')->controller(AdopterController::cla
 
 Route::prefix('adoptions')->middleware('auth')->controller(AdoptionController::class)->group(function () {
     Route::get('/', 'index')->middleware('check.permissions:adoptions,view');
+    // Slim animal/adopter pickers for the adoption form, gated by the
+    // adoptions permission (not the animals/adopters menu grants).
+    Route::get('/animal-options', 'animalOptions')->middleware('check.permissions:adoptions,view');
+    Route::get('/adopter-options', 'adopterOptions')->middleware('check.permissions:adoptions,view');
     Route::get('/{id}', 'show')->middleware('check.permissions:adoptions,view');
     Route::post('/', 'store')->middleware('check.permissions:adoptions,create');
     Route::put('/{id}', 'update')->middleware('check.permissions:adoptions,update');
@@ -271,6 +283,9 @@ Route::prefix('volunteers')->middleware('auth')->controller(VolunteerController:
 
 Route::prefix('foster-homes')->middleware('auth')->controller(FosterHomeController::class)->group(function () {
     Route::get('/', 'index')->middleware('check.permissions:foster-homes,view');
+    // Animal picker for the placement dialog, gated by the foster-homes
+    // permission (not the animals menu grant).
+    Route::get('/animal-options', 'animalOptions')->middleware('check.permissions:foster-homes,view');
     Route::get('/{id}', 'show')->middleware('check.permissions:foster-homes,view');
     Route::post('/', 'store')->middleware('check.permissions:foster-homes,create');
     Route::put('/{id}', 'update')->middleware('check.permissions:foster-homes,update');
@@ -301,6 +316,10 @@ Route::prefix('foster-homes/{fosterHome}/placements')->middleware('auth')->contr
 */
 Route::prefix('kennels')->middleware('auth')->controller(KennelController::class)->group(function () {
     Route::get('/', 'index')->middleware('check.permissions:kennels,view');
+    // Form lookups (statuses + sizes) and the stay dialog's animal picker,
+    // gated by the kennels permission (not the lookup/animals menu grants).
+    Route::get('/form-options', 'formOptions')->middleware('check.permissions:kennels,view');
+    Route::get('/animal-options', 'animalOptions')->middleware('check.permissions:kennels,view');
     Route::get('/{id}', 'show')->middleware('check.permissions:kennels,view');
     Route::post('/', 'store')->middleware('check.permissions:kennels,create');
     Route::put('/{id}', 'update')->middleware('check.permissions:kennels,update');
@@ -342,6 +361,9 @@ Route::prefix('donors')->middleware('auth')->controller(DonorController::class)-
 
 Route::prefix('donations')->middleware('auth')->controller(DonationController::class)->group(function () {
     Route::get('/', 'index')->middleware('check.permissions:donations,view');
+    // Donor picker for the donation form, gated by the donations permission
+    // (not the donors menu grant).
+    Route::get('/donor-options', 'donorOptions')->middleware('check.permissions:donations,view');
     Route::get('/{id}', 'show')->middleware('check.permissions:donations,view');
     Route::post('/', 'store')->middleware('check.permissions:donations,create');
     Route::put('/{id}', 'update')->middleware('check.permissions:donations,update');
@@ -427,6 +449,9 @@ Route::prefix('tags')->middleware('auth')->controller(TagController::class)->gro
 */
 Route::prefix('documents')->middleware('auth')->controller(DocumentController::class)->group(function () {
     Route::get('/', 'index')->middleware('check.permissions:documents,view');
+    // Owner picker for the upload dialog (?type=animal|adopter|adoption|
+    // volunteer|foster_home), gated by the documents permission only.
+    Route::get('/owner-options', 'ownerOptions')->middleware('check.permissions:documents,view');
     Route::post('/', 'store')->middleware('check.permissions:documents,create');
     Route::put('/{id}', 'update')->middleware('check.permissions:documents,update');
     Route::delete('/{id}', 'destroy')->middleware('check.permissions:documents,update');

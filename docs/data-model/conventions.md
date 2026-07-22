@@ -25,6 +25,12 @@ not repeat them.
   `audit_logs`) do **not** use soft deletes.
 - Most lookup tables carry `deleted_at` only where deactivation is expected
   (`animal_statuses`); simple lists (`species`, `donation_types`) do not.
+- Because deletes are soft, the DB `cascadeOnDelete` FKs never fire through the
+  app — a parent's soft delete must cascade in the Service where children
+  surface outside the parent's own routes. Deleting an animal soft-deletes its
+  `rescue` (dashboard trends), `appointments` (dashboard agenda),
+  `health_records` and `surgeries` (`AnimalService::delete`); the pivot-like
+  vaccine/medication rows have no `deleted_at` and stay.
 
 ## Timestamps
 

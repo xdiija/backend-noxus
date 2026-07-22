@@ -21,7 +21,7 @@ Migrations already exist (`database/migrations/2026_07_01_*`), so each module is
 | 1 — Animal reference data (lookups) | ✅ Done |
 | 2 — Animals (core) | ✅ Done |
 | 3 — Adoptions | ✅ Done |
-| 4 — Health | 🟨 Backend done — UI pending |
+| 4 — Health | ✅ Done |
 | 5 — Fostering & volunteers | ✅ Done |
 | 6 — Finance | ✅ Done |
 | 7 — Cross-cutting (documents, audit) | ✅ Done |
@@ -95,7 +95,7 @@ follow-ups in edit mode); return/cancel are row actions on the list
 (`ReturnAdoptionDialog` + the shared `SelectNotesDialog`). Menus render from
 `getMenus()` after re-seeding + re-login.
 
-## Module 4 — Health 🟨 (backend done, UI pending)
+## Module 4 — Health ✅
 Clinical history nested under an animal (follow-ups/images pattern): five
 resources under `animals/{animal}/…` — `health-records`, `vaccines` (applied
 doses), `medications` (courses, `end_date` null = ongoing), `appointments`,
@@ -113,8 +113,17 @@ in the same transaction (never un-neuters). Covered by
 `AnimalMedicationTest.php`, `AppointmentTest.php`, `SurgeryTest.php`.
 Tables: `health_records`, `vaccines`, `animal_vaccines`, `medications`,
 `animal_medications`, `appointments`, `surgeries`.
-**Pending:** frontend (health sections on the Animal form/detail per
-`patterns/frontend-vertical-slice.md`).
+Frontend: a "Saúde" card on `AnimalsForm` (edit mode only — records need a
+saved animal id), implemented as `components/AnimalHealthSection.vue`: five
+tabs (Histórico clínico / Vacinas / Medicações / Consultas / Cirurgias), each
+a dense table + inline add/edit form with delete-confirm (follow-ups pattern,
+plus row edit). Nested services (`healthRecordsService`,
+`animalVaccinesService`, `animalMedicationsService`, `appointmentsService`,
+`surgeriesService`) take the `animalId`; `vaccinesService`/`medicationsService`
+are read-only catalogs feeding the selects. Saving a surgery with the
+"É castração" toggle emits `castration` so the parent form mirrors the
+server-side `neutered`/`neuter_date` sync without a reload. No new menus —
+reuses the `animals` grant.
 
 ## Module 5 — Fostering & volunteers ✅
 Volunteers CRUD (org-scoped, `suppliers` pattern, active/inactive `status`
